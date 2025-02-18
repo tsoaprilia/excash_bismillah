@@ -31,6 +31,7 @@ class ExcashDatabase {
         ${CategoryFields.updated_at_category} TEXT
       )
     ''');
+    
 
     await db.execute('''
       CREATE TABLE $tableProduct (
@@ -99,11 +100,44 @@ class ExcashDatabase {
   }
 
   //PRODUCT
+  // PRODUCT CRUD
   Future<Product> createProduct(Product product) async {
-    final db = await instance.database;
-    await db.insert(tableProduct, product.toJson());
-    return product;
+  final db = await instance.database;
+  final newProduct = product.copy(
+    created_at: product.created_at ?? DateTime.now(),
+    updated_at: product.updated_at ?? DateTime.now(),
+  );
+
+  // 🔹 Debug: Cek sebelum insert
+  print("Menyimpan Produk:");
+  print("Nama: ${newProduct.name_product}");
+  print("ID Kategori: ${newProduct.id_category}");
+
+  await db.insert(tableProduct, newProduct.toJson());
+  return newProduct;
+}
+Future<void> loadProducts() async {
+  final dbProducts = await ExcashDatabase.instance.getAllProducts();
+  print("🔹 Produk dari DB:");
+  for (var p in dbProducts) {
+    print("Nama: ${p.name_product}, ID Kategori: ${p.id_category}");
   }
+}
+
+
+  // Future<Product> createProduct(Product product) async {
+  //   final db = await instance.database;
+  //   final newProduct = product.copy(
+  //     created_at: product.created_at ?? DateTime.now(),
+  //     updated_at: product.updated_at ?? DateTime.now(),
+  //   );
+  //   await db.insert(tableProduct, newProduct.toJson());
+  //   print("Simpan Produk: Nama = ${product.name_product}, ID Kategori = ${product.id_category}");
+
+  //   return newProduct;
+  // }
+
+  
 
   Future<List<Product>> getAllProducts() async {
     final db = await instance.database;
@@ -119,17 +153,64 @@ class ExcashDatabase {
 
   Future<int> updateProduct(Product product) async {
     final db = await instance.database;
+    final updatedProduct = product.copy(updated_at: DateTime.now());
     return await db.update(
       tableProduct,
-      product.toJson(),
+      updatedProduct.toJson(),
       where: '${ProductFields.id_product} = ?',
       whereArgs: [product.id_product],
     );
   }
 
-  Future<int> deleteProductById(String id) async {
-    final db = await instance.database;
-    return await db.delete(tableProduct, where: '${ProductFields.id_product} = ?', whereArgs: [id]);
-  }
+Future<int> deleteProductById(int id) async {
+  final db = await instance.database;
+  return await db.delete(
+    'product',
+    where: 'id_product = ?',
+    whereArgs: [id],
+  );
 }
+
+  getAllTransactions() {}
+}
+//   Future<int> deleteProductById(String id) async {
+//     final db = await instance.database;
+//     return await db.delete(tableProduct, where: '${ProductFields.id_product} = ?', whereArgs: [id]);
+//   }
+// }
+
+
+//   Future<Product> createProduct(Product product) async {
+//     final db = await instance.database;
+//     await db.insert(tableProduct, product.toJson());
+//     return product;
+//   }
+
+//   Future<List<Product>> getAllProducts() async {
+//     final db = await instance.database;
+//     final result = await db.query(tableProduct);
+//     return result.map((json) => Product.fromJson(json)).toList();
+//   }
+
+//   Future<Product?> getProductById(String id) async {
+//     final db = await instance.database;
+//     final result = await db.query(tableProduct, where: '${ProductFields.id_product} = ?', whereArgs: [id]);
+//     return result.isNotEmpty ? Product.fromJson(result.first) : null;
+//   }
+
+//   Future<int> updateProduct(Product product) async {
+//     final db = await instance.database;
+//     return await db.update(
+//       tableProduct,
+//       product.toJson(),
+//       where: '${ProductFields.id_product} = ?',
+//       whereArgs: [product.id_product],
+//     );
+//   }
+
+//   Future<int> deleteProductById(String id) async {
+//     final db = await instance.database;
+//     return await db.delete(tableProduct, where: '${ProductFields.id_product} = ?', whereArgs: [id]);
+//   }
+// }
 

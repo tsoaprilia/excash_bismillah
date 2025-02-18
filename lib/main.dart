@@ -1,3 +1,5 @@
+import 'package:excash/general_pages/auth/auth_page.dart';
+import 'package:excash/general_pages/menu.dart';
 import 'package:excash/pages/kategori_page.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +19,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const CategoryPage(),
+        home: const AuthPage(),
+
+      // home: const MainScreen(),
     );
   }
 }
