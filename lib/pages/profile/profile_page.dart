@@ -1,3 +1,6 @@
+import 'package:excash/pages/dashboard/dashboard_page.blade.dart';
+import 'package:excash/pages/ekspor/ekspor_page.blade.dart';
+import 'package:excash/pages/impor/impor_page.blade.dart';
 import 'package:excash/pages/log/log_page.blade.dart';
 import 'package:flutter/material.dart';
 
@@ -102,7 +105,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.dashboard,
                     "Dashboard Reporting",
                     () {
-                      // Tambahkan navigasi jika ada
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const DashboardPage()),
+                      );
                     },
                   ),
                   _buildMenuItem(
@@ -120,14 +127,22 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.file_download,
                     "Ekspor Data",
                     () {
-                      // Tambahkan aksi jika diperlukan
+                       Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const eksporPage()),
+                      );
                     },
                   ),
                   _buildMenuItem(
                     Icons.file_upload,
                     "Impor Data",
                     () {
-                      // Tambahkan aksi jika diperlukan
+                       Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ImporPage()),
+                      );
                     },
                   ),
                   _buildMenuItem(

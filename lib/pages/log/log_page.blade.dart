@@ -2,6 +2,8 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/pages/log/detail_log_page.dart';
 import 'package:excash/widgets/log/log_card_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:excash/pages/product/product_cart_page.dart';
+
 
 class LogPage extends StatefulWidget {
   const LogPage({super.key});
@@ -50,13 +52,82 @@ class _LogPageState extends State<LogPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
-          "Log Aktivitas",
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+             Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    size: 24, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            Column(
+              children: const [
+                Text(
+                  "Welcome",
+                  style: TextStyle(
+                    color: Color(0xFF757B7B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  "Aprilia Dwi Cristyana",
+                  style: TextStyle(
+                    color: Color(0xFF424242),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: Offset(0, 0),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 24,
+                  color: Colors.black,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProductCartPage()),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
       body: Padding(

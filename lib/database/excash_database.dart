@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:excash/models/excash.dart';
 import 'package:excash/models/product.dart';
 import 'package:path/path.dart';
@@ -162,8 +164,34 @@ Future<void> loadProducts() async {
     );
   }
 
+// Future<int> deleteProductById(int id) async {
+//   final db = await instance.database;
+//   return await db.delete(
+//     'product',
+//     where: 'id_product = ?',
+//     whereArgs: [id],
+//   );
+// }
+
 Future<int> deleteProductById(int id) async {
   final db = await instance.database;
+
+  // 1️⃣ Ambil informasi produk terlebih dahulu sebelum dihapus
+  final product = await getProductById(id.toString());
+
+  if (product != null && product.image_product != null && product.image_product!.isNotEmpty) {
+    try {
+      final file = File(product.image_product!);
+      if (await file.exists()) {
+        await file.delete(); // Hapus file dari penyimpanan
+        print("✅ Gambar dihapus: ${product.image_product}");
+      }
+    } catch (e) {
+      print("❌ Gagal menghapus gambar: $e");
+    }
+  }
+
+  // 2️⃣ Hapus produk dari database
   return await db.delete(
     'product',
     where: 'id_product = ?',

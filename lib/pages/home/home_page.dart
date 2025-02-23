@@ -19,16 +19,32 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _refreshProducts() async {
     setState(() => _isLoading = true);
-    final products = await ExcashDatabase.instance.getAllProducts();
 
-    setState(() {
-      _products = products;
-      _categories = ["Semua", ..._products.map((p) => p.category).toSet()];
-      if (!_categories.contains(_selectedCategory)) {
-        _selectedCategory = "Semua";
+    try {
+      // Ambil semua kategori
+      final categoriesData = await ExcashDatabase.instance.getAllCategory();
+      final categories = <String>{"Semua"};
+
+      for (var category in categoriesData) {
+        categories.add(category.name_category);
       }
-      _isLoading = false;
-    });
+
+      print("Kategori yang ditemukan: $categories");
+
+      // Ambil semua produk
+      final products = await ExcashDatabase.instance.getAllProducts();
+      print("Produk berhasil diambil: ${products.length} item");
+
+      setState(() {
+        _products = products;
+        _categories = categories.toList()
+          ..sort(); // Pastikan kategori tersortir
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error saat mengambil produk/kategori: $e");
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -41,7 +57,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredProducts = _filteredProducts();
+    final filteredProducts = _getFilteredProducts();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -122,6 +138,14 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
               ),
               child: TextField(
                 decoration: InputDecoration(
@@ -154,10 +178,12 @@ class _HomePageState extends State<HomePage> {
               height: 40,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
+                itemCount: _categories
+                    .length, // HARUSNYA INI, BUKAN _getFilteredProducts().length
                 itemBuilder: (context, index) {
                   final category = _categories[index];
                   final isSelected = category == _selectedCategory;
+
                   return GestureDetector(
                     onTap: () {
                       setState(() {
@@ -165,9 +191,9 @@ class _HomePageState extends State<HomePage> {
                       });
                     },
                     child: Container(
-                      margin: EdgeInsets.only(right: 8),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: isSelected ? Colors.black : Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -185,6 +211,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
             ),
+
             const SizedBox(height: 10),
 
             // Daftar Produk
@@ -199,8 +226,8 @@ class _HomePageState extends State<HomePage> {
                               SliverGridDelegateWithMaxCrossAxisExtent(
                             maxCrossAxisExtent: 200,
                             crossAxisSpacing: 8,
-                            mainAxisSpacing: 6,
-                            childAspectRatio: 0.7,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.6,
                           ),
                           itemCount: filteredProducts.length,
                           itemBuilder: (context, index) {
@@ -221,14 +248,24 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Filter produk berdasarkan kategori
-  List<Product> _filteredProducts() {
-    if (_products.isEmpty) return [];
+  List<Product> _getFilteredProducts() {
     if (_selectedCategory == "Semua") {
       return _products;
-    } else {
-      return _products
-          .where((product) => product.category == _selectedCategory)
-          .toList();
     }
+
+    // Cari ID kategori berdasarkan nama kategori yang dipilih
+    final categoriesData = _categories.where((cat) => cat != "Semua").toList();
+    final selectedCategoryIndex = categoriesData.indexOf(_selectedCategory);
+
+    if (selectedCategoryIndex == -1) {
+      return []; // Jika kategori tidak ditemukan, kembalikan daftar kosong
+    }
+
+    final selectedCategoryId =
+        selectedCategoryIndex + 1; // Sesuaikan dengan ID kategori dari database
+
+    return _products.where((product) {
+      return product.id_category == selectedCategoryId;
+    }).toList();
   }
 }

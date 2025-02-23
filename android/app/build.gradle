@@ -48,6 +48,8 @@ defaultConfig {
     targetSdkVersion 34  // Sesuaikan agar kompatibel dengan Android terbaru
     versionCode flutterVersionCode.toInteger()
     versionName flutterVersionName
+            multiDexEnabled true
+
 }
     // defaultConfig {
     //     // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
