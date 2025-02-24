@@ -31,7 +31,8 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     double indicatorWidth = 20; // Lebar indikator setengah lingkaran
-    double itemWidth = MediaQuery.of(context).size.width / 5; // Hitung posisi ikon
+    double itemWidth =
+        MediaQuery.of(context).size.width / 5; // Hitung posisi ikon
 
     return Scaffold(
       body: IndexedStack(
@@ -40,7 +41,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: Container(
         margin: const EdgeInsets.all(16),
-         padding: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.only(top: 4),
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E), // Warna background
           borderRadius: BorderRadius.circular(12), // Efek rounded
@@ -52,23 +53,29 @@ class _MainScreenState extends State<MainScreen> {
               items: [
                 _buildNavItem(Icons.home_outlined, Icons.home, 0),
                 _buildNavItem(Icons.grid_view_outlined, Icons.grid_view, 1),
-                _buildNavItem(Icons.shopping_cart_outlined, Icons.shopping_cart, 2),
-                _buildNavItem(Icons.receipt_long_outlined, Icons.receipt_long, 3),
+                _buildNavItem(Icons.inventory_2_outlined, Icons.inventory_2, 2),
+                _buildNavItem(
+                    Icons.receipt_long_outlined, Icons.receipt_long, 3),
                 _buildNavItem(Icons.person_outline, Icons.person, 4),
               ],
               currentIndex: _selectedIndex,
               backgroundColor: Colors.transparent, // Agar efek shadow terlihat
               selectedItemColor: Colors.white, // Warna icon saat aktif
-              unselectedItemColor: const Color(0xFF757B7B), // Warna icon saat tidak aktif
-              type: BottomNavigationBarType.fixed, // Menjaga ukuran tetap stabil
-              elevation: 0, // Menghilangkan shadow default dari BottomNavigationBar
+              unselectedItemColor:
+                  const Color(0xFF757B7B), // Warna icon saat tidak aktif
+              type:
+                  BottomNavigationBarType.fixed, // Menjaga ukuran tetap stabil
+              elevation:
+                  0, // Menghilangkan shadow default dari BottomNavigationBar
               onTap: _onItemTapped,
             ),
 
             // Indikator setengah lingkaran
             Positioned(
               bottom: 0,
-              left: (_selectedIndex * itemWidth) + (itemWidth / 2) - (indicatorWidth / 2),
+              left: (_selectedIndex * itemWidth) +
+                  (itemWidth / 2) -
+                  (indicatorWidth / 2),
               child: ClipPath(
                 clipper: HalfCircleClipper(),
                 child: Container(
@@ -87,7 +94,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // Fungsi untuk membuat item navigasi dengan ikon yang berubah
-  BottomNavigationBarItem _buildNavItem(IconData iconOutlined, IconData iconFilled, int index) {
+  BottomNavigationBarItem _buildNavItem(
+      IconData iconOutlined, IconData iconFilled, int index) {
     return BottomNavigationBarItem(
       icon: Icon(_selectedIndex == index ? iconFilled : iconOutlined),
       label: '',

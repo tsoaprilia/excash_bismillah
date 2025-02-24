@@ -111,6 +111,14 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: Offset(0, 0),
+                  ),
+                ],
               ),
               child: IconButton(
                 icon: Icon(
@@ -220,15 +228,7 @@ class _HomePageState extends State<HomePage> {
                   ? const Center(child: CircularProgressIndicator())
                   : filteredProducts.isEmpty
                       ? const Center(child: Text('Produk Kosong'))
-                      : GridView.builder(
-                          padding: const EdgeInsets.all(0),
-                          gridDelegate:
-                              SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 200,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 0.6,
-                          ),
+                      : ListView.builder(
                           itemCount: filteredProducts.length,
                           itemBuilder: (context, index) {
                             final product = filteredProducts[index];

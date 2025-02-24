@@ -24,7 +24,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   late String _stock;
   late String _description;
   late String? _selectedCategory;
-  File? _image;
+  // File? _image;
   late bool _isUpdateForm;
 
   @override
@@ -41,33 +41,24 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _selectedCategory = widget.product?.id_category != null
         ? widget.product!.id_category.toString()
         : null;
-    _image = (widget.product?.image_product ?? '').isNotEmpty
-        ? File(widget.product!.image_product!)
-        : null;
-  }
-
-  Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 800,
-      maxHeight: 800,
-    );
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-    }
+    // _image = (widget.product?.image_product ?? '').isNotEmpty
+    //     ? File(widget.product!.image_product!)
+    //     : null;
   }
 
   // Future<void> _pickImage() async {
-  //   final pickedFile =
-  //       await ImagePicker().pickImage(source: ImageSource.gallery);
+  //   final pickedFile = await ImagePicker().pickImage(
+  //     source: ImageSource.gallery,
+  //     maxWidth: 800,
+  //     maxHeight: 800,
+  //   );
   //   if (pickedFile != null) {
   //     setState(() {
   //       _image = File(pickedFile.path);
   //     });
   //   }
   // }
+
 
   Future<void> _scanBarcode() async {
     try {
@@ -115,7 +106,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         description: _description,
         created_at: DateTime.now(),
         updated_at: DateTime.now(),
-        image_product: _image?.path ?? '',
+        // image_product: _image?.path ?? '',
       );
 
       if (_isUpdateForm) {
@@ -211,7 +202,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                           sellingPrice: _sellingPrice,
                           stock: _stock,
                           description: _description,
-                          image: _image,
+                          // image: _image,
                           onIdProductChanged: (value) =>
                               setState(() => _idProduct = value),
                           onNameChanged: (value) =>
@@ -226,7 +217,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                               setState(() => _stock = value),
                           onDescriptionChanged: (value) =>
                               setState(() => _description = value),
-                          onPickImage: _pickImage,
+                          // onPickImage: _pickImage,
                         ),
                         const SizedBox(height: 20),
                         _buildScanButton(),

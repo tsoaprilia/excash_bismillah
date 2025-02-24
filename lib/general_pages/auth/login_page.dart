@@ -1,3 +1,4 @@
+import 'package:excash/database/excash_database.dart';
 import 'package:excash/general_pages/menu.dart';
 import 'package:excash/general_pages/auth/register_page.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,26 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool rememberMe = false;
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  Future<void> loginUser() async {
+    String email = emailController.text;
+    String password = passwordController.text;
+
+    final user = await ExcashDatabase.instance.loginUser(email, password);
+    if (user != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login berhasil")),
+      );
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => const MainScreen()));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email atau password salah")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +76,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 8),
             TextField(
+              controller: emailController,
               decoration: InputDecoration(
                 hintText: "aprilia@gmail.com",
                 filled: true,
@@ -76,6 +98,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 8),
             TextField(
+              controller: passwordController,
               obscureText: true,
               decoration: InputDecoration(
                 filled: true,
@@ -121,13 +144,7 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const MainScreen()),
-                  );
-                },
+                onPressed: loginUser,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E1E1E), // Warna hitam
                   foregroundColor: Colors.white,

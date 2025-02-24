@@ -14,7 +14,7 @@ class ProductFormWidget extends StatefulWidget {
   final String sellingPrice;
   final String stock;
   final String description;
-  final File? image;
+  // final File? image;
   final ValueChanged<String> onIdProductChanged;
   final ValueChanged<String> onNameChanged;
   final ValueChanged<String?> onCategoryChanged;
@@ -22,7 +22,7 @@ class ProductFormWidget extends StatefulWidget {
   final ValueChanged<String> onSellingPriceChanged;
   final ValueChanged<String> onStockChanged;
   final ValueChanged<String> onDescriptionChanged;
-  final VoidCallback onPickImage;
+  // final VoidCallback onPickImage;
 
   const ProductFormWidget({
     super.key,
@@ -33,7 +33,7 @@ class ProductFormWidget extends StatefulWidget {
     required this.sellingPrice,
     required this.stock,
     required this.description,
-    required this.image,
+    // required this.image,
     required this.onIdProductChanged,
     required this.onNameChanged,
     required this.onCategoryChanged,
@@ -41,7 +41,7 @@ class ProductFormWidget extends StatefulWidget {
     required this.onSellingPriceChanged,
     required this.onStockChanged,
     required this.onDescriptionChanged,
-    required this.onPickImage,
+    // required this.onPickImage,
   });
 
   @override
@@ -131,21 +131,21 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: widget.onPickImage,
-            child: Container(
-              height: 150,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: widget.image == null
-                  ? const Center(child: Icon(Icons.add_a_photo, size: 40))
-                  : Image.file(widget.image!, fit: BoxFit.cover),
-            ),
-          ),
-          const SizedBox(height: 16),
+          // GestureDetector(
+          //   onTap: widget.onPickImage,
+          //   child: Container(
+          //     height: 150,
+          //     width: double.infinity,
+          //     decoration: BoxDecoration(
+          //       border: Border.all(color: Colors.black),
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //     child: widget.image == null
+          //         ? const Center(child: Icon(Icons.add_a_photo, size: 40))
+          //         : Image.file(widget.image!, fit: BoxFit.cover),
+          //   ),
+          // ),
+          // const SizedBox(height: 16),
           _buildTextField(
             label: 'ID Produk',
             controller: _idController,

@@ -1,4 +1,6 @@
+import 'package:excash/database/excash_database.dart';
 import 'package:excash/general_pages/auth/login_page.dart';
+import 'package:excash/models/user.dart';
 import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -10,6 +12,59 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   bool agreeToTerms = false;
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController businessNameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+
+ Future<void> registerUser() async {
+  if (!agreeToTerms) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Anda harus menyetujui ketentuan sebelum mendaftar."),
+      ),
+    );
+    return;
+  }
+
+  String email = emailController.text;
+  String fullName = fullNameController.text;
+  String businessName = businessNameController.text;
+  String password = passwordController.text;
+  String confirmPassword = confirmPasswordController.text;
+
+  if (password != confirmPassword) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Password dan konfirmasi password tidak cocok"),
+      ),
+    );
+    return;
+  }
+
+  final newUser = User(
+    email: email,
+    fullName: fullName,
+    businessName: businessName,
+    password: password,
+    image: null, // Jika ada fitur upload foto, bisa diubah nanti
+  );
+
+  try {
+    await ExcashDatabase.instance.registerUser(newUser);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Registrasi berhasil")),
+    );
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => const LoginPage()));
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.toString())),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -47,24 +102,43 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 24),
 
               // Input Email
-              buildTextField(label: "Email", hintText: "aprilia@gmail.com"),
+              buildTextField(
+                label: "Email",
+                hintText: "aprilia@gmail.com",
+                controller: emailController,
+              ),
               const SizedBox(height: 16),
 
               // Input Nama Lengkap
               buildTextField(
-                  label: "Nama Lengkap", hintText: "Aprilia Dwi Cristyana"),
+                label: "Nama Lengkap",
+                hintText: "Aprilia Dwi Cristyana",
+                controller: fullNameController,
+              ),
               const SizedBox(height: 16),
 
               // Input Nama Usaha
-              buildTextField(label: "Nama Usaha", hintText: "April'Studio"),
+              buildTextField(
+                label: "Nama Usaha",
+                hintText: "April'Studio",
+                controller: businessNameController,
+              ),
               const SizedBox(height: 16),
 
               // Input Kata Sandi
-              buildTextField(label: "Kata Sandi", isPassword: true),
+              buildTextField(
+                label: "Kata Sandi",
+                controller: passwordController,
+                obscureText: true,
+              ),
               const SizedBox(height: 16),
 
               // Input Konfirmasi Kata Sandi
-              buildTextField(label: "Konfirmasi Kata Sandi", isPassword: true),
+              buildTextField(
+                label: "Konfirmasi Kata Sandi",
+                controller: confirmPasswordController,
+                obscureText: true,
+              ),
               const SizedBox(height: 16),
 
               // Checkbox Setuju Syarat dan Ketentuan
@@ -107,13 +181,8 @@ class _RegisterPageState extends State<RegisterPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginPage()),
-                    );
-                  },
+                               onPressed: registerUser,
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E1E1E), // Warna hitam
                     foregroundColor: Colors.white,
@@ -168,8 +237,12 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // Fungsi untuk membuat text field
-  Widget buildTextField(
-      {required String label, String? hintText, bool isPassword = false}) {
+  Widget buildTextField({
+    required String label,
+    String? hintText,
+    TextEditingController? controller,
+    bool obscureText = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -183,7 +256,8 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         const SizedBox(height: 8),
         TextField(
-          obscureText: isPassword,
+          controller: controller,
+          obscureText: obscureText,
           decoration: InputDecoration(
             hintText: hintText,
             filled: true,

@@ -1,7 +1,10 @@
 import 'dart:io';
 
 import 'package:excash/models/excash.dart';
+import 'package:excash/models/order.dart';
+import 'package:excash/models/order_detail.dart';
 import 'package:excash/models/product.dart';
+import 'package:excash/models/user.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -33,7 +36,6 @@ class ExcashDatabase {
         ${CategoryFields.updated_at_category} TEXT
       )
     ''');
-    
 
     await db.execute('''
       CREATE TABLE $tableProduct (
@@ -46,8 +48,18 @@ class ExcashDatabase {
         ${ProductFields.description} TEXT NOT NULL,
         ${ProductFields.created_at} TEXT NOT NULL,
         ${ProductFields.updated_at} TEXT NOT NULL,
-        ${ProductFields.image_product} TEXT,
         FOREIGN KEY (${ProductFields.id_category}) REFERENCES $tableCategory(${CategoryFields.id_category})
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $tableUser (
+        ${UserFields.id} INTEGER PRIMARY KEY AUTOINCREMENT,
+        ${UserFields.email} TEXT UNIQUE NOT NULL,
+        ${UserFields.fullName} TEXT NOT NULL,
+        ${UserFields.businessName} TEXT NOT NULL,
+        ${UserFields.password} TEXT NOT NULL,
+        ${UserFields.image} TEXT NULL
       )
     ''');
   }
@@ -59,8 +71,10 @@ class ExcashDatabase {
       tableCategory,
       {
         CategoryFields.name_category: category.name_category,
-        CategoryFields.created_at_category: category.created_at_category.toIso8601String(),
-        CategoryFields.updated_at_category: category.updated_at_category.toIso8601String(),
+        CategoryFields.created_at_category:
+            category.created_at_category.toIso8601String(),
+        CategoryFields.updated_at_category:
+            category.updated_at_category.toIso8601String(),
       },
     );
     return category.copy(id_category: id);
@@ -74,7 +88,8 @@ class ExcashDatabase {
 
   Future<Category?> getCategoryById(int id) async {
     final db = await instance.database;
-    final result = await db.query(tableCategory, where: '${CategoryFields.id_category} = ?', whereArgs: [id]);
+    final result = await db.query(tableCategory,
+        where: '${CategoryFields.id_category} = ?', whereArgs: [id]);
 
     if (result.isNotEmpty) {
       return Category.fromJson(result.first);
@@ -98,34 +113,35 @@ class ExcashDatabase {
 
   Future<int> deleteCategoryById(int id) async {
     final db = await instance.database;
-    return await db.delete(tableCategory, where: '${CategoryFields.id_category} = ?', whereArgs: [id]);
+    return await db.delete(tableCategory,
+        where: '${CategoryFields.id_category} = ?', whereArgs: [id]);
   }
 
   //PRODUCT
   // PRODUCT CRUD
   Future<Product> createProduct(Product product) async {
-  final db = await instance.database;
-  final newProduct = product.copy(
-    created_at: product.created_at ?? DateTime.now(),
-    updated_at: product.updated_at ?? DateTime.now(),
-  );
+    final db = await instance.database;
+    final newProduct = product.copy(
+      created_at: product.created_at ?? DateTime.now(),
+      updated_at: product.updated_at ?? DateTime.now(),
+    );
 
-  // 🔹 Debug: Cek sebelum insert
-  print("Menyimpan Produk:");
-  print("Nama: ${newProduct.name_product}");
-  print("ID Kategori: ${newProduct.id_category}");
+    // 🔹 Debug: Cek sebelum insert
+    print("Menyimpan Produk:");
+    print("Nama: ${newProduct.name_product}");
+    print("ID Kategori: ${newProduct.id_category}");
 
-  await db.insert(tableProduct, newProduct.toJson());
-  return newProduct;
-}
-Future<void> loadProducts() async {
-  final dbProducts = await ExcashDatabase.instance.getAllProducts();
-  print("🔹 Produk dari DB:");
-  for (var p in dbProducts) {
-    print("Nama: ${p.name_product}, ID Kategori: ${p.id_category}");
+    await db.insert(tableProduct, newProduct.toJson());
+    return newProduct;
   }
-}
 
+  Future<void> loadProducts() async {
+    final dbProducts = await ExcashDatabase.instance.getAllProducts();
+    print("🔹 Produk dari DB:");
+    for (var p in dbProducts) {
+      print("Nama: ${p.name_product}, ID Kategori: ${p.id_category}");
+    }
+  }
 
   // Future<Product> createProduct(Product product) async {
   //   final db = await instance.database;
@@ -139,8 +155,6 @@ Future<void> loadProducts() async {
   //   return newProduct;
   // }
 
-  
-
   Future<List<Product>> getAllProducts() async {
     final db = await instance.database;
     final result = await db.query(tableProduct);
@@ -149,7 +163,8 @@ Future<void> loadProducts() async {
 
   Future<Product?> getProductById(String id) async {
     final db = await instance.database;
-    final result = await db.query(tableProduct, where: '${ProductFields.id_product} = ?', whereArgs: [id]);
+    final result = await db.query(tableProduct,
+        where: '${ProductFields.id_product} = ?', whereArgs: [id]);
     return result.isNotEmpty ? Product.fromJson(result.first) : null;
   }
 
@@ -164,40 +179,75 @@ Future<void> loadProducts() async {
     );
   }
 
-// Future<int> deleteProductById(int id) async {
-//   final db = await instance.database;
-//   return await db.delete(
-//     'product',
-//     where: 'id_product = ?',
-//     whereArgs: [id],
-//   );
-// }
+  Future<int> deleteProductById(int id) async {
+    final db = await instance.database;
+    return await db.delete(
+      'product',
+      where: 'id_product = ?',
+      whereArgs: [id],
+    );
+  }
 
-Future<int> deleteProductById(int id) async {
-  final db = await instance.database;
+  // 🔹 REGISTER USER
+  Future<int> registerUser(User user) async {
+    final db = await instance.database;
 
-  // 1️⃣ Ambil informasi produk terlebih dahulu sebelum dihapus
-  final product = await getProductById(id.toString());
+    // Cek apakah email sudah terdaftar
+    final existingUser = await db.query(
+      tableUser,
+      where: '${UserFields.email} = ?',
+      whereArgs: [user.email],
+    );
 
-  if (product != null && product.image_product != null && product.image_product!.isNotEmpty) {
-    try {
-      final file = File(product.image_product!);
-      if (await file.exists()) {
-        await file.delete(); // Hapus file dari penyimpanan
-        print("✅ Gambar dihapus: ${product.image_product}");
-      }
-    } catch (e) {
-      print("❌ Gagal menghapus gambar: $e");
+    if (existingUser.isNotEmpty) {
+      throw Exception("Email sudah digunakan");
+    }
+
+    return await db.insert(tableUser, user.toJson());
+  }
+
+  // 🔹 LOGIN USER
+  Future<User?> loginUser(String email, String password) async {
+    final db = await instance.database;
+
+    final result = await db.query(
+      tableUser,
+      where: '${UserFields.email} = ? AND ${UserFields.password} = ?',
+      whereArgs: [email, password],
+    );
+
+    if (result.isNotEmpty) {
+      return User.fromJson(result.first);
+    } else {
+      return null;
     }
   }
 
-  // 2️⃣ Hapus produk dari database
-  return await db.delete(
-    'product',
-    where: 'id_product = ?',
-    whereArgs: [id],
-  );
-}
+  // Future<int> deleteProductById(int id) async {
+  //   final db = await instance.database;
+
+  //   // 1️⃣ Ambil informasi produk terlebih dahulu sebelum dihapus
+  //   final product = await getProductById(id.toString());
+
+  //   if (product != null && product.image_product != null && product.image_product!.isNotEmpty) {
+  //     try {
+  //       final file = File(product.image_product!);
+  //       if (await file.exists()) {
+  //         await file.delete(); // Hapus file dari penyimpanan
+  //         print("✅ Gambar dihapus: ${product.image_product}");
+  //       }
+  //     } catch (e) {
+  //       print("❌ Gagal menghapus gambar: $e");
+  //     }
+  //   }
+
+  //   // 2️⃣ Hapus produk dari database
+  //   return await db.delete(
+  //     'product',
+  //     where: 'id_product = ?',
+  //     whereArgs: [id],
+  //   );
+  // }
 
   getAllTransactions() {}
 }

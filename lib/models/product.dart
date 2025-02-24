@@ -10,7 +10,7 @@ class ProductFields {
   static const String description = 'description';
   static const String created_at = 'created_at';
   static const String updated_at = 'updated_at';
-  static const String image_product = 'image_product';
+  // static const String image_product = 'image_product';
 }
 
 class Product {
@@ -50,7 +50,7 @@ class Product {
         ProductFields.description: description,
         ProductFields.created_at: created_at.toIso8601String(),
         ProductFields.updated_at: updated_at.toIso8601String(),
-        ProductFields.image_product: image_product,
+        // ProductFields.image_product: image_product,
       };
 
   static Product fromJson(Map<String, dynamic> json) => Product(
@@ -63,7 +63,7 @@ class Product {
         description: json[ProductFields.description],
         created_at: DateTime.parse(json[ProductFields.created_at]),
         updated_at: DateTime.parse(json[ProductFields.updated_at]),
-        image_product: json[ProductFields.image_product],
+        // image_product: json[ProductFields.image_product],
       );
 
   Product copy({
@@ -76,7 +76,7 @@ class Product {
     String? description,
     DateTime? created_at,
     DateTime? updated_at,
-    String? image_product,
+    // String? image_product,
   }) =>
       Product(
         id_product: id_product ?? this.id_product,
@@ -88,7 +88,7 @@ class Product {
         description: description ?? this.description,
         created_at: created_at ?? this.created_at,
         updated_at: updated_at ?? this.updated_at,
-        image_product: image_product ?? this.image_product,
+        // image_product: image_product ?? this.image_product,
       );
 }
 
