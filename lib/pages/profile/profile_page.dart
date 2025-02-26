@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:excash/general_pages/auth/login_page.dart';
 import 'package:excash/pages/dashboard/dashboard_page.blade.dart';
 import 'package:excash/pages/ekspor/ekspor_page.blade.dart';
 import 'package:excash/pages/impor/impor_page.blade.dart';
 import 'package:excash/pages/log/log_page.blade.dart';
+import 'package:excash/pages/profile/edit_profile_page.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,6 +17,35 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  String _userName = "Nama Pengguna";
+  String _userEmail = "Email Pengguna";
+  String _userbusinessName = "Nama Bisnis";
+  String _profileImage = 'assets/img/profile.png';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _saveProfileImage(String pickedFile) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_profile_image', pickedFile);
+  }
+
+// Fungsi untuk mengambil data user dari SharedPreferences
+  void _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? "Nama Pengguna";
+      _userEmail = prefs.getString('user_email') ?? "Email Pengguna";
+      _userbusinessName =
+          prefs.getString('user_business_name') ?? "Nama Bisnis";
+      _profileImage =
+          prefs.getString('user_profile_image') ?? 'assets/img/profile.png';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,30 +77,37 @@ class _ProfilePageState extends State<ProfilePage> {
                       border: Border.all(color: Colors.white, width: 4),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/img/profile.png', // Ganti dengan path gambar yang sesuai
-                        fit: BoxFit.cover,
-                      ),
+                      borderRadius: BorderRadius.circular(
+                          4), // Border radius untuk gambar
+                      child: _profileImage.startsWith('assets')
+                          ? Image.asset(_profileImage, fit: BoxFit.cover)
+                          : Image.file(File(_profileImage), fit: BoxFit.cover),
                     ),
                   ),
 
                   const SizedBox(height: 8),
                   // Nama Pengguna
-                  const Text(
-                    "Aprilia Dwi Cristyana",
-                    style: TextStyle(
-                      fontSize: 14, // Ukuran font 14px
-                      fontWeight: FontWeight.w600, // Semi-bold
-                      color: Color(0xFF414040), // Warna teks
+                  Text(
+                    _userName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF414040),
                     ),
                   ),
 
                   const SizedBox(height: 8),
                   // Tombol Edit Profil
                   ElevatedButton.icon(
-                    onPressed: () {
-                      // Tambahkan fungsi edit profil
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const EditProfilePage()),
+                      );
+                      setState(() {
+                        _loadUserData();
+                      }); // Paksa update tampilan setelah kembali
                     },
                     icon: const Icon(Icons.edit, size: 12),
                     label: const Text("Edit Profil"),
@@ -86,8 +127,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
-                        _buildInfoRow("Email", "aprilia@gmail.com"),
-                        _buildInfoRow("Nama Usaha", "April’s Studio"),
+                        _buildInfoRow("Email", _userEmail),
+                        _buildInfoRow("Nama Usaha", _userbusinessName),
                       ],
                     ),
                   ),
@@ -127,7 +168,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.file_download,
                     "Ekspor Data",
                     () {
-                       Navigator.push(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) => const eksporPage()),
@@ -138,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.file_upload,
                     "Impor Data",
                     () {
-                       Navigator.push(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) => const ImporPage()),
@@ -148,8 +189,90 @@ class _ProfilePageState extends State<ProfilePage> {
                   _buildMenuItem(
                     Icons.exit_to_app,
                     "Keluar",
-                    () {
-                      // Tambahkan aksi logout
+                    () async {
+                      bool confirmLogout = await showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              dialogBackgroundColor:
+                                  Colors.white, // Pastikan background putih
+                            ),
+                            child: AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(10), // Radius 10
+                              ),
+                              title: const Text(
+                                "Konfirmasi Logout",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: Color(0xFF424242),
+                                ),
+                              ),
+                              content: const Text(
+                                "Apakah Anda yakin ingin logout?",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 14,
+                                  color: Color(
+                                      0xFF757B7B), // Warna teks lebih soft
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context)
+                                        .pop(true); // Tidak logout
+                                  },
+                                  child: const Text(
+                                    "Ya",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Color(0xFF424242),
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context)
+                                        .pop(false); // Ya, lanjut logout
+                                  },
+                                  child: const Text(
+                                    "Tidak",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Color(0xFFD39054),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+
+                      if (confirmLogout == true) {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        await prefs.remove('user_id');
+                        await prefs.remove('user_name');
+                        await prefs.remove('user_email');
+                        await prefs.remove('user_business_name');
+
+                        if (mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      }
                     },
                   ),
                 ],

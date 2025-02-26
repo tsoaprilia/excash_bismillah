@@ -40,12 +40,9 @@ class _TransactionPageState extends State<TransactionPage> {
         time: "14/06/2024 16:55",
       ),
     ];
-   
   }
 
   @override
- 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,7 +164,30 @@ class _TransactionPageState extends State<TransactionPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+             const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.format_list_bulleted_outlined,
+                      color: Color(0xFF1E1E1E),
+                    ),
+                    const SizedBox(
+                        width: 6), // Beri jarak sedikit antara ikon dan teks
+                    const Text(
+                      'Transaksi Saya',
+                      style: TextStyle(
+                        color: Color(0xFF1E1E1E),
+                        fontWeight: FontWeight.w600, // Semi bold
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
             Expanded(
               child: _isLoading

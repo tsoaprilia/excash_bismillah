@@ -62,6 +62,36 @@ class ExcashDatabase {
         ${UserFields.image} TEXT NULL
       )
     ''');
+
+        await db.execute('''
+      CREATE TABLE "order" (
+        id_order INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_user INTEGER NOT NULL,
+        total_product INTEGER NOT NULL,
+        total_price INTEGER NOT NULL,
+        diskon_type BOOLEAN NOT NULL,
+        diskon_value INTEGER NOT NULL,
+        payment INTEGER NOT NULL,
+        change INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (id_user) REFERENCES user(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE order_detail (
+        id_order_detail INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_order INTEGER NOT NULL,
+        id_product TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        subtotal INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (id_order) REFERENCES "order"(id_order),
+        FOREIGN KEY (id_product) REFERENCES product(id_product)
+      )
+    ''');
   }
 
   //CATEGORY
@@ -223,6 +253,74 @@ class ExcashDatabase {
     }
   }
 
+  Future<User?> getUserById(int id) async {
+    final db = await instance.database;
+
+    final maps = await db.query(
+      tableUser,
+      columns: [
+        UserFields.id,
+        UserFields.email,
+        UserFields.fullName,
+        UserFields.businessName,
+        UserFields.password,
+        UserFields.image,
+      ],
+      where: '${UserFields.id} = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return User.fromJson(maps.first);
+    } else {
+      return null;
+    }
+  }
+
+  Future<int> updateUser(User user) async {
+    final db = await instance.database;
+
+    return db.update(
+      tableUser,
+      user.toJson(),
+      where: '${UserFields.id} = ?',
+      whereArgs: [user.id],
+    );
+  }
+
+
+
+//CREATE ORDER
+Future<int> createOrderTransaction(Order order, List<OrderDetail> orderDetails) async {
+  final db = await instance.database;
+
+  return await db.transaction((txn) async {
+    // Simpan order ke tabel order
+    final orderId = await txn.insert(tableOrder, order.toJson());
+
+    // Simpan setiap item ke tabel order_detail
+    for (var detail in orderDetails) {
+      final newDetail = detail.copy(id_order: orderId);
+      await txn.insert(tableOrderDetail, newDetail.toJson());
+
+      // Update stok produk
+      final product = await getProductById(detail.id_product);
+      if (product != null) {
+        final newStock = product.stock - detail.amount;
+        if (newStock < 0) {
+          throw Exception("Stok tidak mencukupi untuk produk ${product.name_product}");
+        }
+        await txn.update(
+          tableProduct,
+          {ProductFields.stock: newStock},
+          where: "${ProductFields.id_product} = ?",
+          whereArgs: [detail.id_product],
+        );
+      }
+    }
+    return orderId;
+  });
+}
   // Future<int> deleteProductById(int id) async {
   //   final db = await instance.database;
 

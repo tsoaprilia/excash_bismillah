@@ -33,6 +33,7 @@ class User {
     String? businessName,
     String? password,
     String? image,
+    
   }) =>
       User(
         id: id ?? this.id,

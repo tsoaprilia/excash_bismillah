@@ -12,6 +12,9 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   bool agreeToTerms = false;
+  bool isPasswordVisible = false;
+  bool isConfirmPasswordVisible = false;
+
   final TextEditingController emailController = TextEditingController();
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController businessNameController = TextEditingController();
@@ -19,52 +22,69 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
- Future<void> registerUser() async {
-  if (!agreeToTerms) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Anda harus menyetujui ketentuan sebelum mendaftar."),
-      ),
-    );
-    return;
+  // Fungsi untuk validasi format password
+  bool isValidPassword(String password) {
+    final RegExp passwordRegExp =
+        RegExp(r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$');
+    return passwordRegExp.hasMatch(password);
   }
 
-  String email = emailController.text;
-  String fullName = fullNameController.text;
-  String businessName = businessNameController.text;
-  String password = passwordController.text;
-  String confirmPassword = confirmPasswordController.text;
+  Future<void> registerUser() async {
+    if (!agreeToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Anda harus menyetujui ketentuan sebelum mendaftar."),
+        ),
+      );
+      return;
+    }
 
-  if (password != confirmPassword) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Password dan konfirmasi password tidak cocok"),
-      ),
+    String email = emailController.text;
+    String fullName = fullNameController.text;
+    String businessName = businessNameController.text;
+    String password = passwordController.text;
+    String confirmPassword = confirmPasswordController.text;
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Password dan konfirmasi password tidak cocok"),
+        ),
+      );
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              "Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol."),
+        ),
+      );
+      return;
+    }
+
+    final newUser = User(
+      email: email,
+      fullName: fullName,
+      businessName: businessName,
+      password: password,
+      image: null,
     );
-    return;
+
+    try {
+      await ExcashDatabase.instance.registerUser(newUser);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registrasi berhasil")),
+      );
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => const LoginPage()));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
-
-  final newUser = User(
-    email: email,
-    fullName: fullName,
-    businessName: businessName,
-    password: password,
-    image: null, // Jika ada fitur upload foto, bisa diubah nanti
-  );
-
-  try {
-    await ExcashDatabase.instance.registerUser(newUser);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Registrasi berhasil")),
-    );
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const LoginPage()));
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString())),
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -96,12 +116,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 "Lakukan pendaftaran akun",
                 style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF6C727F), // Warna abu-abu
+                  color: Color(0xFF6C727F),
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Input Email
               buildTextField(
                 label: "Email",
                 hintText: "aprilia@gmail.com",
@@ -109,7 +128,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 16),
 
-              // Input Nama Lengkap
               buildTextField(
                 label: "Nama Lengkap",
                 hintText: "Aprilia Dwi Cristyana",
@@ -117,7 +135,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 16),
 
-              // Input Nama Usaha
               buildTextField(
                 label: "Nama Usaha",
                 hintText: "April'Studio",
@@ -125,23 +142,42 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 16),
 
-              // Input Kata Sandi
               buildTextField(
                 label: "Kata Sandi",
                 controller: passwordController,
-                obscureText: true,
+                obscureText: !isPasswordVisible,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      isPasswordVisible = !isPasswordVisible;
+                    });
+                  },
+                ),
               ),
               const SizedBox(height: 16),
 
-              // Input Konfirmasi Kata Sandi
               buildTextField(
                 label: "Konfirmasi Kata Sandi",
                 controller: confirmPasswordController,
-                obscureText: true,
+                obscureText: !isConfirmPasswordVisible,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    isConfirmPasswordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                    });
+                  },
+                ),
               ),
               const SizedBox(height: 16),
 
-              // Checkbox Setuju Syarat dan Ketentuan
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -152,19 +188,18 @@ class _RegisterPageState extends State<RegisterPage> {
                         agreeToTerms = newValue!;
                       });
                     },
-                    activeColor: const Color(0xFF6C727F), // Warna abu-abu
+                    activeColor: const Color(0xFF6C727F),
                   ),
                   Expanded(
                     child: RichText(
                       text: const TextSpan(
-                        style: TextStyle(
-                            color: Color(0xFF6C727F)), // Warna abu-abu
+                        style: TextStyle(color: Color(0xFF6C727F)),
                         children: [
                           TextSpan(text: "Saya setuju dengan Excash "),
                           TextSpan(
                             text: "ketentuan penggunaan",
                             style: TextStyle(
-                              color: Color(0xFFD39054), // Warna orange
+                              color: Color(0xFFD39054),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -177,14 +212,12 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 24),
 
-              // Tombol Daftar
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                               onPressed: registerUser,
-
+                  onPressed: registerUser,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E1E1E), // Warna hitam
+                    backgroundColor: const Color(0xFF1E1E1E),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -197,8 +230,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16), // Tambahkan jarak sebelum teks daftar
-              // Teks "Belum punya akun? Buat Sekarang!"
+              const SizedBox(height: 16),
               Center(
                 child: GestureDetector(
                   onTap: () {
@@ -210,16 +242,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                   child: RichText(
                     text: const TextSpan(
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6C727F), // Warna abu-abu
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF6C727F)),
                       children: [
-                        TextSpan(text: "SudahBelum punya akun? "),
+                        TextSpan(text: "Sudah punya akun? "),
                         TextSpan(
                           text: "Login Sekarang!",
                           style: TextStyle(
-                            color: Color(0xFFD39054), // Warna orange
+                            color: Color(0xFFD39054),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -228,7 +257,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24), // Tambahkan padding bawah
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -236,24 +265,17 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // Fungsi untuk membuat text field
   Widget buildTextField({
     required String label,
     String? hintText,
     TextEditingController? controller,
     bool obscureText = false,
+    Widget? suffixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -262,10 +284,8 @@ class _RegisterPageState extends State<RegisterPage> {
             hintText: hintText,
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.black12)),
+            suffixIcon: suffixIcon,
           ),
         ),
       ],

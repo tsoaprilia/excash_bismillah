@@ -1,5 +1,6 @@
 import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/product.dart';
+import 'package:excash/pages/product/product_cart2_page.dart';
 import 'package:excash/pages/product/product_cart_page.dart';
 import 'package:excash/widgets/product/product_card_beli_widget.dart';
 import 'package:flutter/material.dart';
@@ -16,35 +17,31 @@ class _HomePageState extends State<HomePage> {
   List<String> _categories = ["Semua"];
   String _selectedCategory = "Semua";
   bool _isLoading = false;
+  int totalAmount = 0;
 
   Future<void> _refreshProducts() async {
     setState(() => _isLoading = true);
-
     try {
-      // Ambil semua kategori
       final categoriesData = await ExcashDatabase.instance.getAllCategory();
       final categories = <String>{"Semua"};
-
       for (var category in categoriesData) {
         categories.add(category.name_category);
       }
-
-      print("Kategori yang ditemukan: $categories");
-
-      // Ambil semua produk
       final products = await ExcashDatabase.instance.getAllProducts();
-      print("Produk berhasil diambil: ${products.length} item");
-
       setState(() {
         _products = products;
-        _categories = categories.toList()
-          ..sort(); // Pastikan kategori tersortir
+        _categories = categories.toList()..sort();
         _isLoading = false;
       });
     } catch (e) {
-      print("Error saat mengambil produk/kategori: $e");
       setState(() => _isLoading = false);
     }
+  }
+
+  void _updateTotalAmount(int amount) {
+    setState(() {
+      totalAmount += amount;
+    });
   }
 
   @override
@@ -129,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ProductCartPage()),
+                    MaterialPageRoute(builder: (context) => ProductCart2Page()),
                   );
                 },
               ),
@@ -221,6 +218,30 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.format_list_bulleted_outlined,
+                      color: Color(0xFF1E1E1E),
+                    ),
+                    const SizedBox(
+                        width: 6), // Beri jarak sedikit antara ikon dan teks
+                    const Text(
+                      'Order Disini',
+                      style: TextStyle(
+                        color: Color(0xFF1E1E1E),
+                        fontWeight: FontWeight.w600, // Semi bold
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
 
             // Daftar Produk
             Expanded(
@@ -234,9 +255,8 @@ class _HomePageState extends State<HomePage> {
                             final product = filteredProducts[index];
                             return ProductCardBeliWidget(
                               product: product,
-                              refreshProduct: () {
-                                _refreshProducts();
-                              },
+                              refreshProduct: _refreshProducts,
+                              updateTotalAmount: _updateTotalAmount,
                             );
                           },
                         ),
@@ -244,6 +264,18 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+      floatingActionButton: totalAmount > 0
+          ? FloatingActionButton(
+              onPressed: () {},
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.shopping_cart),
+                  Text("$totalAmount"),
+                ],
+              ),
+            )
+          : null,
     );
   }
 

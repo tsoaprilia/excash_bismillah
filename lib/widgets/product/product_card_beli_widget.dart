@@ -4,11 +4,13 @@ import 'package:excash/models/product.dart';
 class ProductCardBeliWidget extends StatefulWidget {
   final Product product;
   final VoidCallback refreshProduct;
+  final Function(int) updateTotalAmount;
 
   const ProductCardBeliWidget({
     super.key,
     required this.product,
     required this.refreshProduct,
+     required this.updateTotalAmount,
   });
 
   @override
@@ -21,6 +23,7 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
   void _increaseQuantity() {
     setState(() {
       quantity++;
+      widget.updateTotalAmount(1);
     });
   }
 
@@ -28,6 +31,7 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
     if (quantity > 0) {
       setState(() {
         quantity--;
+        widget.updateTotalAmount(-1);
       });
     }
   }
