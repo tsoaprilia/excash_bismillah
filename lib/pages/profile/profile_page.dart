@@ -6,6 +6,7 @@ import 'package:excash/pages/ekspor/ekspor_page.blade.dart';
 import 'package:excash/pages/impor/impor_page.blade.dart';
 import 'package:excash/pages/log/log_page.blade.dart';
 import 'package:excash/pages/profile/edit_profile_page.dart';
+import 'package:excash/pages/transaction/print.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,6 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
 // Fungsi untuk mengambil data user dari SharedPreferences
+
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -44,6 +46,16 @@ class _ProfilePageState extends State<ProfilePage> {
       _profileImage =
           prefs.getString('user_profile_image') ?? 'assets/img/profile.png';
     });
+  }
+
+  void _showPrintDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Color(0x00000000), // Transparan 100%
+        child: PrintSettingsPage(),
+      ),
+    );
   }
 
   @override
@@ -186,6 +198,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
+                  _buildMenuItem(
+                    Icons.file_upload,
+                    "Print",
+                    () => _showPrintDialog(context),
+                  ),
+
                   _buildMenuItem(
                     Icons.exit_to_app,
                     "Keluar",

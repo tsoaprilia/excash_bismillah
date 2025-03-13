@@ -1,9 +1,12 @@
+import 'package:excash/models/order.dart';
+import 'package:excash/models/user.dart';
+import 'package:excash/services/shared_pref_helper.dart';
+import 'package:flutter/material.dart';
 import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/product.dart';
 import 'package:excash/pages/product/product_cart2_page.dart';
-import 'package:excash/pages/product/product_cart_page.dart';
 import 'package:excash/widgets/product/product_card_beli_widget.dart';
-import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,24 +16,60 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  String _userName = "Nama Pengguna";
+  String _userEmail = "Email Pengguna";
+  String _userbusinessName = "Nama Bisnis";
+
   List<Product> _products = [];
   List<String> _categories = ["Semua"];
   String _selectedCategory = "Semua";
   bool _isLoading = false;
   int totalAmount = 0;
 
+  // Data keranjang belanja
+  List<Map<String, dynamic>> cart = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _refreshProducts();
+  }
+
+  void _clearCart() {
+    setState(() {
+      cart.clear(); // Mengosongkan keranjang belanja
+      totalAmount = 0; // Reset total amount
+    });
+    // Memanggil fungsi untuk memperbarui produk
+    _refreshProducts();
+  }
+
+  void _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? "Nama Pengguna";
+      _userEmail = prefs.getString('user_email') ?? "Email Pengguna";
+      _userbusinessName =
+          prefs.getString('user_business_name') ?? "Nama Bisnis";
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _refreshProducts();
+  }
+
   Future<void> _refreshProducts() async {
     setState(() => _isLoading = true);
     try {
       final categoriesData = await ExcashDatabase.instance.getAllCategory();
-      final categories = <String>{"Semua"};
-      for (var category in categoriesData) {
-        categories.add(category.name_category);
-      }
       final products = await ExcashDatabase.instance.getAllProducts();
+
       setState(() {
+        _categories = ["Semua", ...categoriesData.map((c) => c.name_category)];
         _products = products;
-        _categories = categories.toList()..sort();
         _isLoading = false;
       });
     } catch (e) {
@@ -38,18 +77,60 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _updateTotalAmount(int amount) {
-    setState(() {
-      totalAmount += amount;
-    });
+  List<Product> _getFilteredProducts() {
+    if (_selectedCategory == "Semua") {
+      return _products;
+    }
+    return _products
+        .where((product) => product.category == _selectedCategory)
+        .toList();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshProducts();
+  void _updateTotalAmount(Product product, int change) {
+    setState(() {
+      totalAmount += change;
     });
+
+    // Update jumlah produk di keranjang
+    final index = cart
+        .indexWhere((item) => item['product'].id_product == product.id_product);
+    if (index != -1) {
+      cart[index]['quantity'] += change;
+      if (cart[index]['quantity'] <= 0) {
+        cart.removeAt(index);
+      }
+    } else if (change > 0) {
+      cart.add({'product': product, 'quantity': change});
+    }
+  }
+
+  int getTotalItems() {
+    return cart.fold<int>(0, (sum, item) => sum + (item['quantity'] as int));
+  }
+
+  double getTotalPrice() {
+    return cart.fold(
+        0,
+        (sum, item) =>
+            sum +
+            (item['product'].price *
+                item['quantity'])); // 🟢 Ditambahkan: Hitung total harga
+  }
+
+  int getProductQuantity(Product product) {
+    final index = cart
+        .indexWhere((item) => item['product'].id_product == product.id_product);
+    return index != -1
+        ? cart[index]['quantity']
+        : 0; // 🟢 Ditambahkan: Ambil jumlah item dari cart
+  }
+
+  Future<void> saveCurrentUser(
+      String userId, String fullName, String userEmail) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_id', userId);
+    await prefs.setString('fullName', fullName);
+    await prefs.setString('user_email', userEmail);
   }
 
   @override
@@ -83,7 +164,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             Column(
-              children: const [
+              children: [
                 Text(
                   "Welcome",
                   style: TextStyle(
@@ -93,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Text(
-                  "Aprilia Dwi Cristyana",
+                  _userName,
                   style: TextStyle(
                     color: Color(0xFF424242),
                     fontSize: 12,
@@ -113,12 +194,12 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
                     spreadRadius: 0,
-                    offset: Offset(0, 0),
+                    offset: const Offset(0, 0),
                   ),
                 ],
               ),
               child: IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.shopping_cart_outlined,
                   size: 24,
                   color: Colors.black,
@@ -126,7 +207,18 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ProductCart2Page()),
+                    MaterialPageRoute(
+                      builder: (context) => ProductCart2Page(
+                        cart: cart,
+                        onTransactionSuccess: () {
+                          // Clear the cart after a successful transaction
+                          setState(() {
+                            cart.clear(); // Reset cart
+                            totalAmount = 0; // Reset total amount
+                          });
+                        },
+                      ),
+                    ),
                   );
                 },
               ),
@@ -138,19 +230,10 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Search Field
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 0),
-                  ),
-                ],
               ),
               child: TextField(
                 decoration: InputDecoration(
@@ -177,14 +260,36 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.shopping_cart_outlined,
+                      color: Color(0xFF1E1E1E),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Order Disini',
+                      style: TextStyle(
+                        color: Color(0xFF1E1E1E),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
 
             // Kategori Produk
             SizedBox(
               height: 40,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: _categories
-                    .length, // HARUSNYA INI, BUKAN _getFilteredProducts().length
+                itemCount: _categories.length,
                 itemBuilder: (context, index) {
                   final category = _categories[index];
                   final isSelected = category == _selectedCategory;
@@ -216,31 +321,6 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
             ),
-
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.format_list_bulleted_outlined,
-                      color: Color(0xFF1E1E1E),
-                    ),
-                    const SizedBox(
-                        width: 6), // Beri jarak sedikit antara ikon dan teks
-                    const Text(
-                      'Order Disini',
-                      style: TextStyle(
-                        color: Color(0xFF1E1E1E),
-                        fontWeight: FontWeight.w600, // Semi bold
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
             const SizedBox(height: 10),
 
             // Daftar Produk
@@ -255,8 +335,10 @@ class _HomePageState extends State<HomePage> {
                             final product = filteredProducts[index];
                             return ProductCardBeliWidget(
                               product: product,
+                              initialQuantity: getProductQuantity(product),
                               refreshProduct: _refreshProducts,
-                              updateTotalAmount: _updateTotalAmount,
+                              updateTotalAmount: (change) =>
+                                  _updateTotalAmount(product, change),
                             );
                           },
                         ),
@@ -264,40 +346,60 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      floatingActionButton: totalAmount > 0
-          ? FloatingActionButton(
-              onPressed: () {},
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      floatingActionButton: cart.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductCart2Page(
+                      cart: cart,
+                      onTransactionSuccess: () {
+                        // Clear the cart after a successful transaction
+                        setState(() {
+                          cart.clear(); // Reset cart
+                          totalAmount = 0; // Reset total amount
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
+              backgroundColor: const Color(0xFFD39054), // Warna latar belakang
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(20), // Membuat sudut membulat
+              ),
+              label: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.shopping_cart),
-                  Text("$totalAmount"),
+                  Row(
+                    children: [
+                      const Icon(Icons.shopping_cart,
+                          color: Colors.white, size: 20), // Ikon keranjang
+                      const SizedBox(width: 8),
+                      Text(
+                        "${getTotalItems()}",
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                      width: 20), // Jarak antara total item dan harga
+                  Text(
+                    "Rp ${getTotalPrice().toInt()}",
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14),
+                  ),
                 ],
               ),
             )
           : null,
     );
-  }
-
-  // Filter produk berdasarkan kategori
-  List<Product> _getFilteredProducts() {
-    if (_selectedCategory == "Semua") {
-      return _products;
-    }
-
-    // Cari ID kategori berdasarkan nama kategori yang dipilih
-    final categoriesData = _categories.where((cat) => cat != "Semua").toList();
-    final selectedCategoryIndex = categoriesData.indexOf(_selectedCategory);
-
-    if (selectedCategoryIndex == -1) {
-      return []; // Jika kategori tidak ditemukan, kembalikan daftar kosong
-    }
-
-    final selectedCategoryId =
-        selectedCategoryIndex + 1; // Sesuaikan dengan ID kategori dari database
-
-    return _products.where((product) {
-      return product.id_category == selectedCategoryId;
-    }).toList();
   }
 }

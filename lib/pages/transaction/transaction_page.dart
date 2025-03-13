@@ -14,35 +14,38 @@ class TransactionPage extends StatefulWidget {
 }
 
 class _TransactionPageState extends State<TransactionPage> {
-  late List<TransactionData> _transactions;
+  late List<TransactionData> _transactions = [];
   var _isLoading = false;
 
-  // Future<void> _refreshTransactions() async {
-  //   setState(() => _isLoading = true);
-  //   _transactions = await ExcashDatabase.instance.getAllTransactions();
-  //   setState(() => _isLoading = false);
-  // }
+  Future<void> _fetchTransactions() async {
+  if (_isLoading) return;  // Jangan biarkan refresh berjalan jika sedang loading
+  setState(() => _isLoading = true);
+    // Ambil semua transaksi dari database
+    final orders = await ExcashDatabase.instance.getAllTransactions();
+
+    // Buat daftar transaksi dengan produk dari tabel order_details
+    List<TransactionData> transactions = [];
+
+    for (var order in orders) {
+      transactions.add(TransactionData(
+        transactionId: order.id_order.toString(),
+        total: "Rp. ${order.total_price}",
+        time: order.created_at.toString(), // Ubah order_date ke created_at
+      ));
+    }
+
+    setState(() {
+      _transactions = transactions;
+      _isLoading = false;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _transactions = [
-      TransactionData(
-        transactionId: "1770546017887890",
-        products: ["Buku B5 - 2", "Pensil 2B Joyko - 2"],
-        total: "Rp. 28.000",
-        time: "14/06/2024 16:50",
-      ),
-      TransactionData(
-        transactionId: "1770546017887899",
-        products: ["Gula Merah - 5"],
-        total: "Rp. 30.000",
-        time: "14/06/2024 16:55",
-      ),
-    ];
+    _fetchTransactions();
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,14 +100,6 @@ class _TransactionPageState extends State<TransactionPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: Offset(0, 0),
-                  ),
-                ],
               ),
               child: IconButton(
                 icon: Icon(
@@ -131,14 +126,6 @@ class _TransactionPageState extends State<TransactionPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 0),
-                  ),
-                ],
               ),
               child: TextField(
                 decoration: InputDecoration(
@@ -164,7 +151,7 @@ class _TransactionPageState extends State<TransactionPage> {
                 ),
               ),
             ),
-             const SizedBox(height: 10),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -174,13 +161,12 @@ class _TransactionPageState extends State<TransactionPage> {
                       Icons.format_list_bulleted_outlined,
                       color: Color(0xFF1E1E1E),
                     ),
-                    const SizedBox(
-                        width: 6), // Beri jarak sedikit antara ikon dan teks
+                    const SizedBox(width: 6),
                     const Text(
                       'Transaksi Saya',
                       style: TextStyle(
                         color: Color(0xFF1E1E1E),
-                        fontWeight: FontWeight.w600, // Semi bold
+                        fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
@@ -194,17 +180,21 @@ class _TransactionPageState extends State<TransactionPage> {
                   ? const Center(child: CircularProgressIndicator())
                   : _transactions.isEmpty
                       ? const Center(child: Text('Transaksi Kosong'))
-                      : ListView.builder(
-                          itemCount: _transactions.length,
-                          itemBuilder: (context, index) {
-                            final transaction = _transactions[index];
-                            return TransactionCardWidget(
-                              transactionId: transaction.transactionId,
-                              products: transaction.products,
-                              total: transaction.total,
-                              time: transaction.time,
-                            );
-                          },
+                      : RefreshIndicator(
+                          onRefresh:
+                              _fetchTransactions, // Menambahkan onRefresh
+                          child: ListView.builder(
+                            itemCount: _transactions.length,
+                            itemBuilder: (context, index) {
+                              final transaction = _transactions[index];
+                              return TransactionCardWidget(
+                                transactionId: transaction.transactionId,
+                                total: transaction.total,
+                                time: transaction.time,
+                                refreshTransaction: _fetchTransactions,
+                              );
+                            },
+                          ),
                         ),
             ),
           ],
@@ -216,13 +206,11 @@ class _TransactionPageState extends State<TransactionPage> {
 
 class TransactionData {
   final String transactionId;
-  final List<String> products;
   final String total;
   final String time;
 
   TransactionData({
     required this.transactionId,
-    required this.products,
     required this.total,
     required this.time,
   });

@@ -1,65 +1,68 @@
 const String tableOrderDetail = 'order_detail';
+
+class OrderDetailFields {
+  static const String id_order_detail = 'id_order_detail';
+  static const String id_order = 'id_order';
+  static const String id_product = 'id_product';
+  static const String quantity = 'quantity';
+  static const String price = 'price';
+  static const String subtotal = 'subtotal';
+}
+
 class OrderDetail {
   final int? id_order_detail;
   final int id_order;
-  final String id_product;
-  final int amount;
-  final int subtotal;
-  final DateTime created_at;
-  final DateTime updated_at;
+  final int id_product;
+  final int quantity;
+  final double price;
+  final double subtotal;
 
   OrderDetail({
     this.id_order_detail,
     required this.id_order,
     required this.id_product,
-    required this.amount,
+    required this.quantity,
+    required this.price,
     required this.subtotal,
-    required this.created_at,
-    required this.updated_at,
   });
 
-  // Tambahkan metode copy
+  Map<String, dynamic> toJson() => {
+        OrderDetailFields.id_order_detail: id_order_detail,
+        OrderDetailFields.id_order: id_order,
+        OrderDetailFields.id_product: id_product,
+        OrderDetailFields.quantity: quantity,
+        OrderDetailFields.price: price,
+        OrderDetailFields.subtotal: subtotal,
+      };
+
+  static OrderDetail fromJson(Map<String, dynamic> json) {
+    return OrderDetail(
+      id_order_detail:
+          int.tryParse(json[OrderDetailFields.id_order_detail].toString()) ?? 0,
+      id_order: int.tryParse(json[OrderDetailFields.id_order].toString()) ?? 0,
+      id_product:
+          int.tryParse(json[OrderDetailFields.id_product].toString()) ?? 0,
+      quantity: int.tryParse(json[OrderDetailFields.quantity].toString()) ?? 0,
+      price: double.tryParse(json[OrderDetailFields.price].toString()) ?? 0.0,
+      subtotal:
+          double.tryParse(json[OrderDetailFields.subtotal].toString()) ?? 0.0,
+    );
+  }
+
   OrderDetail copy({
     int? id_order_detail,
     int? id_order,
-    String? id_product,
-    int? amount,
-    int? subtotal,
-    DateTime? created_at,
-    DateTime? updated_at,
-  }) {
-    return OrderDetail(
-      id_order_detail: id_order_detail ?? this.id_order_detail,
-      id_order: id_order ?? this.id_order,
-      id_product: id_product ?? this.id_product,
-      amount: amount ?? this.amount,
-      subtotal: subtotal ?? this.subtotal,
-      created_at: created_at ?? this.created_at,
-      updated_at: updated_at ?? this.updated_at,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id_order_detail': id_order_detail,
-      'id_order': id_order,
-      'id_product': id_product,
-      'amount': amount,
-      'subtotal': subtotal,
-      'created_at': created_at.toIso8601String(),
-      'updated_at': updated_at.toIso8601String(),
-    };
-  }
-
-  factory OrderDetail.fromJson(Map<String, dynamic> json) {
-    return OrderDetail(
-      id_order_detail: json['id_order_detail'],
-      id_order: json['id_order'],
-      id_product: json['id_product'],
-      amount: json['amount'],
-      subtotal: json['subtotal'],
-      created_at: DateTime.parse(json['created_at']),
-      updated_at: DateTime.parse(json['updated_at']),
-    );
-  }
+    int? id_product,
+    int? quantity,
+    double? price,
+    double? subtotal,
+  }) =>
+      OrderDetail(
+        id_order_detail: id_order_detail ?? this.id_order_detail,
+        id_order: id_order ?? this.id_order,
+        id_product: id_product ?? this.id_product,
+        quantity: quantity ?? this.quantity,
+        price: price ?? this.price,
+        subtotal: subtotal ?? this.subtotal,
+      );
 }

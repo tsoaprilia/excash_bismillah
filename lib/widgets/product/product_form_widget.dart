@@ -198,8 +198,20 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), // Sesuai gambar
+            borderSide: const BorderSide(color: Colors.black), // Default border
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.black), // Border normal
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+                color: Color(0xFFD39054), width: 2), // Border aktif
+          ),
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onChanged: onChanged,
         keyboardType: keyboardType,
@@ -212,25 +224,39 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: DropdownButtonFormField<String>(
-        value: _selectedCategory,
-        items: _categories.map((category) {
-          return DropdownMenuItem<String>(
-            value: category['id_category'].toString(),
-            child:
-                Text(category['name_category'] ?? "Kategori Tidak Diketahui"),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            _selectedCategory = value;
-          });
-          widget.onCategoryChanged(value); // Pastikan dikirim ke parent widget
-        },
-        decoration: InputDecoration(
-          labelText: "Pilih Kategori",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
+          value: _selectedCategory,
+          items: _categories.map((category) {
+            return DropdownMenuItem<String>(
+              value: category['id_category'].toString(),
+              child:
+                  Text(category['name_category'] ?? "Kategori Tidak Diketahui"),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedCategory = value;
+            });
+            widget
+                .onCategoryChanged(value); // Pastikan dikirim ke parent widget
+          },
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12), // Sesuai gambar
+              borderSide:
+                  const BorderSide(color: Colors.black), // Default border
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Colors.black), // Border normal
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                  color: Color(0xFFD39054), width: 2), // Border aktif
+            ),
+            labelText: "Pilih Kategori",
+          )),
     );
   }
 }

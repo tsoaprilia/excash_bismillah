@@ -44,7 +44,7 @@ android {
 
 defaultConfig {
     applicationId "com.example.excash"
-    minSdkVersion 20  // Ubah dari flutter.minSdkVersion ke nilai 20
+    minSdkVersion 21  // Ubah dari flutter.minSdkVersion ke nilai 20
     targetSdkVersion 34  // Sesuaikan agar kompatibel dengan Android terbaru
     versionCode flutterVersionCode.toInteger()
     versionName flutterVersionName

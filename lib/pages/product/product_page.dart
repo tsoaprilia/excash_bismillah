@@ -26,6 +26,7 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   @override
+
   void initState() {
     super.initState();
     _refreshProducts();

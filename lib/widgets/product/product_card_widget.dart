@@ -149,10 +149,10 @@ class ProductCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     print("Daftar Kategori:");
-  for (var cat in categories) {
-    print("ID: ${cat.id_category}, Nama: ${cat.name_category}");
-  }
-  print("ID Kategori Produk: ${product.id_category}");
+    for (var cat in categories) {
+      print("ID: ${cat.id_category}, Nama: ${cat.name_category}");
+    }
+    print("ID Kategori Produk: ${product.id_category}");
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
@@ -297,8 +297,8 @@ class ProductCardWidget extends StatelessWidget {
                           }
 
                           try {
-                            int productId = int.tryParse(product.id_product!) ??
-                                0; // Konversi String ke int
+                            String productId = product.id_product!;
+
                             if (productId == 0) {
                               showNotificationDialog(context, false);
                               return;

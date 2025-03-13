@@ -59,7 +59,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   //   }
   // }
 
-
   Future<void> _scanBarcode() async {
     try {
       String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
@@ -84,48 +83,48 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 
   Future<void> _saveProduct() async {
-  if (_formKey.currentState!.validate()) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      final newProduct = Product(
-        id_product: _idProduct.isNotEmpty
-            ? _idProduct
-            : DateTime.now().millisecondsSinceEpoch.toString(),
-        id_category: _selectedCategory != null
-            ? int.tryParse(_selectedCategory!) ?? 0
-            : 0,
-        name_product: _name,
-        price: _price.isNotEmpty ? int.parse(_price) : 0,
-        selling_price: _sellingPrice.isNotEmpty ? int.parse(_sellingPrice) : 0,
-        stock: _stock.isNotEmpty ? int.parse(_stock) : 0,
-        description: _description,
-        created_at: DateTime.now(),
-        updated_at: DateTime.now(),
-        // image_product: _image?.path ?? '',
+    if (_formKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      if (_isUpdateForm) {
-        await ExcashDatabase.instance.updateProduct(newProduct);
-      } else {
-        await ExcashDatabase.instance.createProduct(newProduct);
-      }
+      try {
+        final newProduct = Product(
+          id_product: _idProduct.isNotEmpty
+              ? _idProduct
+              : DateTime.now().millisecondsSinceEpoch.toString(),
+          id_category: _selectedCategory != null
+              ? int.tryParse(_selectedCategory!) ?? 0
+              : 0,
+          name_product: _name,
+          price: _price.isNotEmpty ? int.parse(_price) : 0,
+          selling_price:
+              _sellingPrice.isNotEmpty ? int.parse(_sellingPrice) : 0,
+          stock: _stock.isNotEmpty ? int.parse(_stock) : 0,
+          description: _description,
+          created_at: DateTime.now(),
+          updated_at: DateTime.now(),
+          // image_product: _image?.path ?? '',
+        );
 
-      if (mounted) {
-        Navigator.pop(context); // Tutup loading
-        Navigator.pop(context); // Tutup halaman
+        if (_isUpdateForm) {
+          await ExcashDatabase.instance.updateProduct(newProduct);
+        } else {
+          await ExcashDatabase.instance.createProduct(newProduct);
+        }
+
+        if (mounted) {
+          Navigator.pop(context); // Tutup loading
+          Navigator.pop(context); // Tutup halaman
+        }
+      } catch (e) {
+        if (mounted) Navigator.pop(context);
+        print("❌ Error menyimpan produk: $e");
       }
-    } catch (e) {
-      if (mounted) Navigator.pop(context);
-      print("❌ Error menyimpan produk: $e");
     }
   }
-}
-
 
 //   Future<void> _saveProduct() async {
 //     if (_formKey.currentState!.validate()) {
@@ -275,7 +274,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       child: ElevatedButton(
         onPressed: _scanBarcode,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
+          backgroundColor: Color(0xFFD39054),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

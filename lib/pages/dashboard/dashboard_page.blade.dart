@@ -10,17 +10,108 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  String selectedYear = "2024";
-  String selectedMonth = "Juni";
+  String selectedFilter = "1 Bulan";
+  final List<String> filters = ["1 Bulan", "3 Bulan", "1 Tahun"];
 
-  final List<String> years = ["2022", "2023", "2024"];
-  final List<String> months = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni"
+  String selectedYear = "2024"; // Default tahun
+  final List<String> years = ["2024", "2025"];
+
+  final Map<String, Map<String, dynamic>> incomeData = {
+    "2024": {
+      "hari_ini": {"income": "360.000", "transactions": "5", "items": "32"},
+      "bulan_ini": {
+        "income": "2.560.000",
+        "transactions": "25",
+        "items": "180"
+      },
+    },
+    "2025": {
+      "hari_ini": {"income": "280.000", "transactions": "4", "items": "25"},
+      "bulan_ini": {
+        "income": "2.100.000",
+        "transactions": "20",
+        "items": "150"
+      },
+    },
+  };
+
+  List<FlSpot> getSalesData() {
+    if (selectedYear == "2024") {
+      if (selectedFilter == "1 Bulan") {
+        return [
+          const FlSpot(1, 100000),
+          const FlSpot(5, 150000),
+          const FlSpot(10, 200000),
+          const FlSpot(15, 250000),
+          const FlSpot(20, 300000),
+          const FlSpot(25, 400000),
+          const FlSpot(30, 500000),
+        ];
+      } else if (selectedFilter == "3 Bulan") {
+        return [
+          const FlSpot(1, 120000),
+          const FlSpot(15, 180000),
+          const FlSpot(30, 250000),
+          const FlSpot(45, 320000),
+          const FlSpot(60, 450000),
+          const FlSpot(75, 480000),
+          const FlSpot(90, 500000),
+        ];
+      } else {
+        return [
+          const FlSpot(1, 150000),
+          const FlSpot(30, 200000),
+          const FlSpot(60, 300000),
+          const FlSpot(90, 400000),
+          const FlSpot(120, 500000),
+          const FlSpot(130, 200000),
+          const FlSpot(150, 400000),
+          const FlSpot(170, 600000),
+          const FlSpot(190, 700000),
+        ];
+      }
+    } else {
+      // Data untuk tahun 2025
+      if (selectedFilter == "1 Bulan") {
+        return [
+          const FlSpot(1, 80000),
+          const FlSpot(5, 120000),
+          const FlSpot(10, 180000),
+          const FlSpot(15, 230000),
+          const FlSpot(20, 280000),
+          const FlSpot(25, 350000),
+          const FlSpot(30, 450000),
+        ];
+      } else if (selectedFilter == "3 Bulan") {
+        return [
+          const FlSpot(1, 100000),
+          const FlSpot(15, 150000),
+          const FlSpot(30, 220000),
+          const FlSpot(45, 280000),
+          const FlSpot(60, 400000),
+          const FlSpot(75, 450000),
+          const FlSpot(90, 480000),
+        ];
+      } else {
+        return [
+          const FlSpot(1, 140000),
+          const FlSpot(30, 190000),
+          const FlSpot(60, 280000),
+          const FlSpot(90, 360000),
+          const FlSpot(120, 470000),
+          const FlSpot(130, 180000),
+          const FlSpot(150, 380000),
+          const FlSpot(170, 570000),
+          const FlSpot(190, 690000),
+        ];
+      }
+    }
+  }
+
+  final List<Map<String, dynamic>> topProducts = [
+    {"rank": 1, "name": "Aqua", "sold": "600"},
+    {"rank": 2, "name": "Sanco2l", "sold": "450"},
+    {"rank": 3, "name": "teh pucuk", "sold": "200"},
   ];
 
   @override
@@ -115,11 +206,13 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildYearFilter(),
+              const SizedBox(height: 10),
               _buildStatsCards(),
               const SizedBox(height: 20),
               _buildSalesPerformance(),
               const SizedBox(height: 20),
-              _buildTopProducts(),
+              _buildProductPerformance(),
             ],
           ),
         ),
@@ -133,13 +226,12 @@ class _DashboardPageState extends State<DashboardPage> {
         Row(
           children: [
             Expanded(
-              child: _bigStatCard("Penghasilan", "360.000",
-                  "5 Transaksi / 32 buah", "Kinerja Hari Ini"),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _bigStatCard("Penghasilan", "2.560.000",
-                  "25 transaksi / 180 buah", "Kinerja Keseluruhan"),
+              child: _bigStatCard(
+                "Penghasilan",
+                incomeData[selectedYear]!['hari_ini']['income'],
+                "${incomeData[selectedYear]!['hari_ini']['transactions']} transaksi / ${incomeData[selectedYear]!['hari_ini']['items']} buah",
+                "Kinerja Hari Ini",
+              ),
             ),
           ],
         ),
@@ -147,11 +239,12 @@ class _DashboardPageState extends State<DashboardPage> {
         Row(
           children: [
             Expanded(
-              child: _smallStatCard("Total Produk", "25 Produk"),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _smallStatCard("Produk Terlaris", "Gula 1 Kg"),
+              child: _bigStatCard(
+                "Penghasilan",
+                incomeData[selectedYear]!['bulan_ini']['income'],
+                "${incomeData[selectedYear]!['bulan_ini']['transactions']} transaksi / ${incomeData[selectedYear]!['bulan_ini']['items']} buah",
+                "Kinerja Bulan Ini",
+              ),
             ),
           ],
         ),
@@ -159,38 +252,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _statCard(String title, String amount, String desc, Color color) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              amount,
-              style: TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.bold, color: color),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              desc,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _bigStatCard(String title, String value, String desc, String time) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -228,221 +292,166 @@ class _DashboardPageState extends State<DashboardPage> {
             desc,
             style: const TextStyle(fontSize: 12, color: Color(0xFF181717)),
           ),
-                    const SizedBox(height: 4),
-
+          const SizedBox(height: 4),
           Text(time, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         ],
       ),
     );
   }
 
-  Widget _smallStatCard(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border(
-          left: BorderSide(color: Color(0xFFD39054), width: 4),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFF181717).withOpacity(0.1),
-            blurRadius: 6,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF181717)),
-          ),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 16, color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSalesPerformance() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildYearFilter() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Performa Penjualan",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            DropdownButton<String>(
-              value: selectedYear,
-              onChanged: (newValue) {
-                setState(() {
-                  selectedYear = newValue!;
-                });
-              },
-              items: years.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ],
+        const Text(
+          "Tahun",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 10),
-
-        // Membungkus grafik dengan Scroll
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: 1000, // Lebar lebih besar supaya bisa di-scroll
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (double value, TitleMeta meta) {
-                        List<String> labels = [
-                          "Jan",
-                          "Feb",
-                          "Mar",
-                          "Apr",
-                          "Mei",
-                          "Jun",
-                          "Jul",
-                          "Agu",
-                          "Sep",
-                          "Okt",
-                          "Nov",
-                          "Des"
-                        ];
-                        return Text(labels[value.toInt()]);
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: [
-                      const FlSpot(0, 500000),
-                      const FlSpot(1, 1200000),
-                      const FlSpot(2, 800000),
-                      const FlSpot(3, 1500000),
-                      const FlSpot(4, 2000000),
-                      const FlSpot(5, 2500000),
-                      const FlSpot(6, 3000000),
-                      const FlSpot(7, 3500000),
-                      const FlSpot(8, 4000000),
-                      const FlSpot(9, 4500000),
-                      const FlSpot(10, 5000000),
-                      const FlSpot(11, 5500000),
-                    ],
-                    isCurved: true,
-                    barWidth: 3,
-                    color: Colors.black,
-                    dotData: FlDotData(show: true),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        DropdownButton<String>(
+          value: selectedYear,
+          onChanged: (newValue) {
+            setState(() {
+              selectedYear = newValue!;
+            });
+          },
+          items: years.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 
-  Widget _buildTopProducts() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Produk Terlaris",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            DropdownButton<String>(
-              value: selectedMonth,
-              onChanged: (newValue) {
-                setState(() {
-                  selectedMonth = newValue!;
-                });
-              },
-              items: months.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Membungkus grafik dengan Scroll
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: 800, // Lebar lebih besar supaya bisa di-scroll
+  Widget _buildSalesPerformance() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 0.0, vertical: 0.0), // Padding lebih seragam
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Performa Penjualan",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              DropdownButton<String>(
+                value: selectedFilter,
+                onChanged: (newValue) {
+                  setState(() {
+                    selectedFilter = newValue!;
+                  });
+                },
+                items: filters.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
             height: 200,
-            child: BarChart(
-              BarChartData(
-                gridData: FlGridData(show: false),
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: true, drawVerticalLine: true),
                 titlesData: FlTitlesData(
-                  leftTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
+                  leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 40,
                       getTitlesWidget: (double value, TitleMeta meta) {
-                        List<String> labels = [
-                          "Gula",
-                          "Beras",
-                          "Aqua",
-                          "Club",
-                          "Nextar",
-                          "Minyak",
-                          "Buku",
-                          "Teh",
-                          "Susu"
-                        ];
-                        return Text(labels[value.toInt()]);
+                        return Text(
+                          "${(value ~/ 1000).toString()}K",
+                          style: const TextStyle(fontSize: 12),
+                        );
                       },
                     ),
                   ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 22,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(fontSize: 10),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 borderData: FlBorderData(show: false),
-                barGroups: List.generate(9, (index) {
-                  return BarChartGroupData(x: index, barRods: [
-                    BarChartRodData(
-                        toY: (300 - index * 30).toDouble(),
-                        color: Colors.black,
-                        width: 20),
-                  ]);
-                }),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: getSalesData(),
+                    isCurved: true,
+                    barWidth: 2, // Garis lebih tipis
+                    color: const Color(0xFFD39054),
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) =>
+                          FlDotCirclePainter(
+                        radius: 3, // Ukuran titik dikecilkan
+                        color: const Color(0xFFD39054),
+                        strokeWidth: 1,
+                        strokeColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductPerformance() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Performa Produk",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Column(
+          children: topProducts.map((product) {
+            return ListTile(
+              leading: Container(
+                width: 24, // Sesuaikan ukuran kotak
+                height: 24,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD39054),
+                  borderRadius: BorderRadius.circular(8), // Radius 8
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  "${product['rank']}",
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
+                ),
+              ),
+              title: Text(product['name']),
+              trailing: Text(
+                "${product['sold']}",
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
