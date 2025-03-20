@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:excash/general_pages/auth/login_page.dart';
 import 'package:excash/pages/dashboard/dashboard_page.blade.dart';
 import 'package:excash/pages/ekspor/ekspor_page.blade.dart';
+import 'package:excash/pages/ekspor/exportimport_page.dart';
 import 'package:excash/pages/impor/impor_page.blade.dart';
 import 'package:excash/pages/log/log_page.blade.dart';
 import 'package:excash/pages/profile/edit_profile_page.dart';
@@ -48,7 +49,6 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,6 +167,17 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
+                  // _buildMenuItem(
+                  //   Icons.file_download,
+                  //   "Ekspor Import Data",
+                  //   () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //           builder: (context) => ExportImportPage()),
+                  //     );
+                  //   },
+                  // ),
                   _buildMenuItem(
                     Icons.file_download,
                     "Ekspor Data",
@@ -174,7 +185,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const eksporPage()),
+                            builder: (context) => const ExportPage()),
                       );
                     },
                   ),
@@ -189,7 +200,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
-                    _buildMenuItem(
+                  _buildMenuItem(
                     Icons.print,
                     "Print",
                     () {
@@ -200,7 +211,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
-                 
 
                   _buildMenuItem(
                     Icons.exit_to_app,

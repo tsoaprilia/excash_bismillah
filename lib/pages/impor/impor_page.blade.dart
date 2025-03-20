@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:excash/pages/product/product_cart_page.dart';
+import 'package:excash/pages/impor/importdata.dart';
 
 class ImporPage extends StatefulWidget {
   const ImporPage({super.key});
@@ -17,7 +17,7 @@ class _ImporPageState extends State<ImporPage> {
   Future<void> pickFile(bool isProduct) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['xls', 'xlsx'], // Hanya file Excel
+      allowedExtensions: ['csv'], // Only allow CSV files
     );
 
     if (result != null) {
@@ -33,14 +33,16 @@ class _ImporPageState extends State<ImporPage> {
 
   @override
   Widget build(BuildContext context) {
+    final importData = ImportData();
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar:  AppBar(
+      appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.start, // Rata kiri
           children: [
             Container(
               width: 48,
@@ -65,55 +67,18 @@ class _ImporPageState extends State<ImporPage> {
                 },
               ),
             ),
-            Column(
-              children: const [
-                Text(
-                  "Welcome",
-                  style: TextStyle(
-                    color: Color(0xFF757B7B),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+            const Padding(
+              padding: EdgeInsets.only(
+                  left: 16.0), 
+              child: Text(
+                "Impor Data",
+                style: TextStyle(
+                  color: Color(0xFF424242),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                Text(
-                  "Aprilia Dwi Cristyana",
-                  style: TextStyle(
-                    color: Color(0xFF424242),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: Offset(0, 0),
-                  ),
-                ],
               ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.shopping_cart_outlined,
-                  size: 24,
-                  color: Colors.black,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ProductCartPage()),
-                  );
-                },
-              ),
-            ),
+            )
           ],
         ),
       ),
@@ -122,18 +87,16 @@ class _ImporPageState extends State<ImporPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildUploadSection(
-              title: "Upload file data produk",
-              file: productFile,
-              onTap: () => pickFile(true),
-            ),
+         
             const SizedBox(height: 24),
+            // Upload section for transaction file
             _buildUploadSection(
-              title: "Upload file data transaksi",
+              title: "Upload file data ",
               file: transactionFile,
               onTap: () => pickFile(false),
             ),
             const SizedBox(height: 24),
+            // Button to import data
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -151,7 +114,10 @@ class _ImporPageState extends State<ImporPage> {
                     );
                     return;
                   }
-                  // Logika untuk mengunggah file ke database
+                  importData.importFromCSV();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Data berhasil diimpor!")),
+                  );
                 },
                 child: const Text("Impor Data", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               ),
@@ -159,21 +125,6 @@ class _ImporPageState extends State<ImporPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildIconButton(IconData icon, VoidCallback onPressed) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: IconButton(icon: Icon(icon, size: 24, color: Colors.black), onPressed: onPressed),
     );
   }
 
@@ -192,14 +143,14 @@ class _ImporPageState extends State<ImporPage> {
               color: Colors.white,
               border: Border.all(color: const Color(0xFFD39054), width: 1.5),
               borderRadius: BorderRadius.circular(12),
-               boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 6,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 6,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
