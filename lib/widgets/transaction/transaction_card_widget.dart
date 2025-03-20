@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:excash/pages/transaction/transaction_detail_page.dart';
+import 'package:intl/intl.dart';
 
 class TransactionCardWidget extends StatelessWidget {
   final String transactionId;
@@ -16,6 +17,14 @@ class TransactionCardWidget extends StatelessWidget {
     required this.refreshTransaction,
   });
 
+String formatTanggal(String time) {
+    try {
+      DateTime dateTime = DateTime.parse(time); // Ubah String ke DateTime
+      return DateFormat('yyyy-MM-dd / HH:mm').format(dateTime);
+    } catch (e) {
+      return time; // Jika gagal parsing, tampilkan apa adanya
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -40,7 +49,7 @@ class TransactionCardWidget extends StatelessWidget {
           _buildDivider(),
           _buildRow("Total", total, isTotal: true),
           _buildDivider(),
-          _buildRow("Waktu", time, isWrap: true), // ✅ Waktu diperbaiki
+          _buildRow("Waktu", formatTanggal(time), isWrap: true),
           _buildDivider(),
           _buildRow(
             "Action",

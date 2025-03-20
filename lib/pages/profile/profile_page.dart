@@ -48,16 +48,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  void _showPrintDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Color(0x00000000), // Transparan 100%
-        child: PrintSettingsPage(),
-      ),
-    );
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -198,11 +189,18 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
-                  _buildMenuItem(
-                    Icons.file_upload,
+                    _buildMenuItem(
+                    Icons.print,
                     "Print",
-                    () => _showPrintDialog(context),
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const PrintSettingsPage()),
+                      );
+                    },
                   ),
+                 
 
                   _buildMenuItem(
                     Icons.exit_to_app,

@@ -127,55 +127,90 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 16),
-              _buildBluetoothButton(),
-              const SizedBox(height: 16),
-              _buildPrinterDropdown(),
-              const SizedBox(height: 16),
-              _buildConnectionButtons(),
-            ],
-          ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    size: 20, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            const SizedBox(width: 12), // Jarak antara ikon dan teks
+            const Text(
+              "Pengaturan Print",
+              style: TextStyle(
+                color: Color(0xFF424242),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 16),
+            _buildBluetoothButton(),
+            const SizedBox(height: 16),
+            _buildPrinterDropdown(),
+            const SizedBox(height: 16),
+            _buildConnectionButtons(),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.print, color: const Color(0xFF1E1E1E)),
-            const SizedBox(width: 8),
-            const Text(
-              "Pengaturan Printer",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          vertical: 8, horizontal: 12), // Padding biar ada ruang
+      decoration: BoxDecoration(
+        color: Colors.white, // Tambahkan background putih
+        borderRadius: BorderRadius.circular(8), // Opsional, biar lebih estetik
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Icon(Icons.print, size: 20, color: Colors.black87),
+          const SizedBox(width: 6),
+          const Text(
+            "Menyambungkan ke printer",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
             ),
-          ],
-        ),
-        IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 

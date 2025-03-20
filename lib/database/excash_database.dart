@@ -496,4 +496,6 @@ class ExcashDatabase {
     );
     return result.map((json) => Order.fromJson(json)).toList();
   }
+
+  //REPORTING
 }
