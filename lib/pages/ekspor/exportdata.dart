@@ -7,23 +7,29 @@ import 'package:sqflite/sqflite.dart';
 
 class ExportData {
   Future<void> exportToCSV() async {
-    Database db = await ExcashDatabase.instance.database;
-
-    // Pastikan ada izin penyimpanan
+    // Pastikan izin penyimpanan diberikan
     if (await Permission.storage.request().isDenied) {
       print("Izin penyimpanan ditolak!");
       return;
     }
 
+    // Dapatkan direktori aplikasi untuk penyimpanan file
     Directory directory = await getApplicationDocumentsDirectory();
     String filePath = '${directory.path}/excash_export.csv';
 
     List<List<dynamic>> csvData = [];
 
+    Database db = await ExcashDatabase.instance.database;
+
     // Ekspor Tabel Category
     List<Map<String, dynamic>> categories = await db.query('category');
     if (categories.isNotEmpty) {
-      csvData.add(['id_category', 'name_category', 'created_at', 'updated_at']);
+      csvData.add([
+        'id_category',
+        'name_category',
+        'created_at_category',
+        'updated_at_category'
+      ]);
       for (var row in categories) {
         csvData.add([
           row['id_category'],

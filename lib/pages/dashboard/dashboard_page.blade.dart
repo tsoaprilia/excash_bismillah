@@ -19,6 +19,21 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   String selectedFilter = "1 Bulan";
   final List<String> filters = ["1 Bulan", "3 Bulan", "1 Tahun"];
+  String selectedMonthFilter = "";
+  final List<String> months = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember"
+  ];
   Map<String, dynamic> incomeData = {};
   List<Map<String, dynamic>> topProducts = [];
   List<FlSpot> salesData = [];
@@ -29,6 +44,10 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+
+    int currentMonth = DateTime.now().month;
+    selectedMonthFilter = months[currentMonth - 1];
+
     _initDatabase();
     _fetchData();
     _fetchTopProducts();
@@ -42,6 +61,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _fetchTopProducts() async {
     final db = await ExcashDatabase.instance.database;
+
+    String monthNumber =
+        (months.indexOf(selectedMonthFilter) + 1).toString().padLeft(2, '0');
+
     final List<Map<String, dynamic>> result = await db.rawQuery('''
     SELECT p.${ProductFields.name_product} AS name_product, 
            COALESCE(SUM(d.${OrderDetailFields.quantity}), 0) AS total_terjual
@@ -49,9 +72,10 @@ class _DashboardPageState extends State<DashboardPage> {
     JOIN $tableProduct p ON d.${OrderDetailFields.id_product} = p.${ProductFields.id_product}
     JOIN $tableOrders o ON d.${OrderDetailFields.id_order} = o.${OrderFields.id_order}  
     WHERE o.${OrderFields.total_price} > 0  
+    AND strftime('%m', o.${OrderFields.created_at}) = ?  -- Filter by month using created_at
     GROUP BY p.${ProductFields.name_product}
     ORDER BY total_terjual DESC
-  ''');
+  ''', [monthNumber]);
 
     setState(() {
       topProducts = result;
@@ -462,9 +486,29 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Performa Produk",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Performa Produk",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            DropdownButton<String>(
+              value: selectedMonthFilter,
+              onChanged: (newMonthValue) {
+                setState(() {
+                  selectedMonthFilter = newMonthValue!;
+                });
+                _fetchTopProducts(); // Update products when month changes
+              },
+              items: months.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         if (topProducts.isEmpty)

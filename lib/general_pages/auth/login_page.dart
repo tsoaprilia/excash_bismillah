@@ -37,37 +37,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Future<void> loginUser() async {
-  //   String email = emailController.text;
-  //   String password = passwordController.text;
-
-  //   final user = await ExcashDatabase.instance.loginUser(email, password);
-  //   if (user != null) {
-  //     SharedPreferences prefs = await SharedPreferences.getInstance();
-  //     await prefs.setInt('user_id', user.id!);
-  //     await prefs.setString('user_name', user.fullName);
-  //     await prefs.setString('user_email', user.email);
-  //     await prefs.setString('user_business_name', user.businessName);
-
-  //     if (rememberMe) {
-  //       await prefs.setString('remembered_email', email);
-  //       await prefs.setString('remembered_password', password);
-  //     } else {
-  //       await prefs.remove('remembered_email');
-  //       await prefs.remove('remembered_password');
-  //     }
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Login berhasil")),
-  //     );
-  //     Navigator.pushReplacement(
-  //         context, MaterialPageRoute(builder: (context) => const MainScreen()));
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Email atau password salah")),
-  //     );
-  //   }
-  // }
 
 Future<void> saveUserData(int idUser, String nameLengkap, String bisnisName) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();

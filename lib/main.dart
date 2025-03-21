@@ -1,60 +1,78 @@
 import 'dart:io';
+import 'package:excash/filemanager.dart';
 import 'package:excash/general_pages/auth/auth_page.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-// Fungsi untuk mendapatkan path file CSV di perangkat
-Future<String> getCsvPath() async {
-  Directory? directory;
-
-  // Cek platform Android
-  if (Platform.isAndroid) {
-    directory =
-        await getExternalStorageDirectory(); // Mengambil direktori eksternal
-    if (directory == null) {
-      directory = Directory(
-          "/storage/emulated/0/Documents"); // Fallback jika tidak ditemukan
-    }
+// Fungsi untuk meminta izin penyimpanan
+Future<void> requestStoragePermission() async {
+  // Meminta izin akses penyimpanan eksternal untuk Android 10+
+  if (await Permission.manageExternalStorage.request().isGranted) {
+    print("✅ Izin penyimpanan diberikan!");
   } else {
-    directory =
-        await getApplicationDocumentsDirectory(); // Direktori untuk platform selain Android
+    print("❌ Izin penyimpanan ditolak!");
+    await openAppSettings(); // Membuka pengaturan jika izin ditolak
   }
-
-  return "${directory.path}/data.csv"; // Menyimpan file dengan nama data.csv
 }
 
-// Fungsi untuk meminta izin penyimpanan
-Future<bool> requestStoragePermission() async {
-  if (Platform.isAndroid) {
-    var status = await Permission.manageExternalStorage.request();
-
-    if (status.isGranted) {
-      print("✅ Izin akses diberikan!");
-      return true;
+Future<String?> getDownloadPath() async {
+  Directory? directory;
+  try {
+    if (Platform.isIOS) {
+      directory = await getApplicationDocumentsDirectory();
     } else {
-      print("❌ Izin akses ditolak!");
-      await openAppSettings(); // Buka pengaturan jika izin ditolak
-      return false;
+      directory = Directory('/storage/emulated/0/Download');
+      if (!await directory.exists()) {
+        directory = await getExternalStorageDirectory();
+      }
     }
+  } catch (err) {
+    print("Tidak dapat mengambil path folder download");
   }
-  return true; // Tidak perlu izin untuk platform lain seperti iOS
+  return directory?.path;
+}
+
+// Fungsi untuk menyimpan file CSV ke penyimpanan eksternal
+Future<void> saveFileToDownload() async {
+  final downloadDir = await getDownloadPath();
+  if (downloadDir != null) {
+    const fileName = "excash_export.csv";
+    var savePath = "$downloadDir/$fileName";
+
+    File file = File(savePath);
+
+    // Jika file sudah ada, tambahkan angka di belakang nama file
+    var count = 1;
+    while (file.existsSync()) {
+      savePath = "$downloadDir/excash_export ($count).csv";
+      file = File(savePath);
+      count++;
+    }
+
+    // Simpan file CSV di path yang sudah dipastikan
+    await file.writeAsString("Data CSV berhasil disimpan!");
+    print("✅ File disimpan di: $savePath");
+  } else {
+    print("❌ Gagal mendapatkan path penyimpanan.");
+  }
 }
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // WAJIB DIPANGGIL DULU
+  WidgetsFlutterBinding.ensureInitialized();
 
-  bool permissionGranted = await requestStoragePermission();
-  if (permissionGranted) {
-    String filePath = await getCsvPath();
-    File file = File(filePath);
-    await file.writeAsString("Data CSV berhasil disimpan!");
-    print("✅ File disimpan di: $filePath");
+  FileManager fileManager = FileManager();
+
+  // Memanggil fungsi untuk mendapatkan path penyimpanan eksternal
+  String? externalPath = await fileManager.getExternalStoragePath();
+
+  if (externalPath != null) {
+    print("Path penyimpanan eksternal: $externalPath");
   } else {
-    print("❌ Gagal menyimpan file karena izin ditolak.");
+    print("Gagal mendapatkan path penyimpanan eksternal.");
   }
-  await openAppSettings();
-  runApp(const MyApp());
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
