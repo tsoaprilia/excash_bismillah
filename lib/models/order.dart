@@ -12,7 +12,7 @@ class OrderFields {
 
 class Order {
   final int? id_order;
-  final int id;
+  final String id;
   final int total_product;
   final int total_price;
   final int payment;
@@ -51,7 +51,7 @@ class Order {
 
   Order copy({
     int? id_order,
-    int? id,
+    String? id,
     int? total_product,
     int? total_price,
     int? payment,

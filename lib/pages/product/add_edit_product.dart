@@ -5,6 +5,7 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/product.dart';
 import 'package:excash/widgets/product/product_form_widget.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddEditProductPage extends StatefulWidget {
   final Product? product;
@@ -41,23 +42,16 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _selectedCategory = widget.product?.id_category != null
         ? widget.product!.id_category.toString()
         : null;
-    // _image = (widget.product?.image_product ?? '').isNotEmpty
-    //     ? File(widget.product!.image_product!)
-    //     : null;
+  
   }
 
-  // Future<void> _pickImage() async {
-  //   final pickedFile = await ImagePicker().pickImage(
-  //     source: ImageSource.gallery,
-  //     maxWidth: 800,
-  //     maxHeight: 800,
-  //   );
-  //   if (pickedFile != null) {
-  //     setState(() {
-  //       _image = File(pickedFile.path);
-  //     });
-  //   }
-  // }
+
+Future<String?> _getUserId() async {
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getString('user_id'); // Mengambil ID pengguna yang login
+  print('User ID: $userId');  // Debugging
+  return userId;
+}
 
   Future<void> _scanBarcode() async {
     try {
@@ -82,92 +76,44 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     }
   }
 
+  
   Future<void> _saveProduct() async {
-    if (_formKey.currentState!.validate()) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
+  if (_formKey.currentState!.validate()) {
+    final userId = await _getUserId(); // Ambil userId
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("User belum login")),
       );
-
-      try {
-        final newProduct = Product(
-          id_product: _idProduct.isNotEmpty
-              ? _idProduct
-              : DateTime.now().millisecondsSinceEpoch.toString(),
-          id_category: _selectedCategory != null
-              ? int.tryParse(_selectedCategory!) ?? 0
-              : 0,
-          name_product: _name,
-          price: _price.isNotEmpty ? int.parse(_price) : 0,
-          selling_price:
-              _sellingPrice.isNotEmpty ? int.parse(_sellingPrice) : 0,
-          stock: _stock.isNotEmpty ? int.parse(_stock) : 0,
-          description: _description,
-          created_at: DateTime.now(),
-          updated_at: DateTime.now(),
-          // image_product: _image?.path ?? '',
-        );
-
-        if (_isUpdateForm) {
-          await ExcashDatabase.instance.updateProduct(newProduct);
-        } else {
-          await ExcashDatabase.instance.createProduct(newProduct);
-        }
-
-        if (mounted) {
-          Navigator.pop(context); // Tutup loading
-          Navigator.pop(context); // Tutup halaman
-        }
-      } catch (e) {
-        if (mounted) Navigator.pop(context);
-        print("❌ Error menyimpan produk: $e");
-      }
+      return;
     }
+
+    final newProduct = Product(
+      id_product: _idProduct.isNotEmpty
+          ? _idProduct
+          : DateTime.now().millisecondsSinceEpoch.toString(),
+      id_category: _selectedCategory != null
+          ? int.tryParse(_selectedCategory!) ?? 0
+          : 0,
+      name_product: _name,
+      price: _price.isNotEmpty ? int.parse(_price) : 0,
+      selling_price: _sellingPrice.isNotEmpty ? int.parse(_sellingPrice) : 0,
+      stock: _stock.isNotEmpty ? int.parse(_stock) : 0,
+      description: _description,
+      created_at: DateTime.now(),
+      updated_at: DateTime.now(),
+      id: userId!, // Assign userId yang didapat dari SharedPreferences
+    );
+
+    if (_isUpdateForm) {
+      await ExcashDatabase.instance.updateProduct(newProduct);
+    } else {
+      await ExcashDatabase.instance.createProduct(newProduct);
+    }
+
+    Navigator.pop(context); // Tutup halaman setelah menyimpan
   }
-
-//   Future<void> _saveProduct() async {
-//     if (_formKey.currentState!.validate()) {
-//       final newProduct = Product(
-//         id_product: _idProduct.isNotEmpty
-//             ? _idProduct
-//             : DateTime.now().millisecondsSinceEpoch.toString(),
-//         id_category: _selectedCategory != null
-//             ? int.tryParse(_selectedCategory!) ?? 0
-//             : 0,
-//         name_product: _name,
-//         price: _price.isNotEmpty ? int.parse(_price) : 0,
-//         selling_price: _sellingPrice.isNotEmpty ? int.parse(_sellingPrice) : 0,
-//         stock: _stock.isNotEmpty ? int.parse(_stock) : 0,
-//         description: _description,
-//         created_at: DateTime.now(),
-//         updated_at: DateTime.now(),
-//         image_product: _image?.path ?? '',
-//       );
-
-// //       final newProduct = Product(
-// //   id_product: _idProduct.isNotEmpty ? _idProduct : DateTime.now().millisecondsSinceEpoch.toString(),
-// //   id_category: _selectedCategory != null ? int.parse(_selectedCategory!) : 0,
-// //   name_product: _name,
-// //   price: int.parse(_price),
-// //   selling_price: int.parse(_sellingPrice),
-// //   stock: int.parse(_stock),
-// //   description: _description,
-// //   created_at: DateTime.now(),
-// //   updated_at: DateTime.now(),
-// //   image_product: _image?.path ?? '',
-// // );
-
-//       if (_isUpdateForm) {
-//         await ExcashDatabase.instance.updateProduct(newProduct);
-//       } else {
-//         await ExcashDatabase.instance.createProduct(newProduct);
-//       }
-//       if (mounted) {
-//         Navigator.pop(context);
-//       }
-//     }
-//   }
+}
 
   @override
   Widget build(BuildContext context) {

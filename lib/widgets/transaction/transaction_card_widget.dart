@@ -6,8 +6,7 @@ class TransactionCardWidget extends StatelessWidget {
   final String transactionId;
   final String total;
   final String time;
-    final VoidCallback refreshTransaction;
-
+  final VoidCallback refreshTransaction;
 
   const TransactionCardWidget({
     super.key,
@@ -17,7 +16,7 @@ class TransactionCardWidget extends StatelessWidget {
     required this.refreshTransaction,
   });
 
-String formatTanggal(String time) {
+  String formatTanggal(String time) {
     try {
       DateTime dateTime = DateTime.parse(time); // Ubah String ke DateTime
       return DateFormat('yyyy-MM-dd / HH:mm').format(dateTime);
@@ -25,6 +24,7 @@ String formatTanggal(String time) {
       return time; // Jika gagal parsing, tampilkan apa adanya
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -40,7 +40,7 @@ String formatTanggal(String time) {
           ),
         ],
       ),
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,9 +83,10 @@ String formatTanggal(String time) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // ✅ Mencegah overflow
+        crossAxisAlignment: CrossAxisAlignment.start, // Align to the top to prevent misalignment
         children: [
-          Flexible(
+          // Title column
+          Expanded(
             flex: 3,
             child: Text(
               title,
@@ -93,6 +94,7 @@ String formatTanggal(String time) {
             ),
           ),
           const SizedBox(width: 8),
+          // Value column
           Expanded(
             flex: 5,
             child: Align(
@@ -104,7 +106,9 @@ String formatTanggal(String time) {
                           value,
                           style: TextStyle(
                             fontSize: isTotal ? 16 : 14,
-                            fontWeight: isTotal ? FontWeight.bold : (isBold ? FontWeight.bold : FontWeight.normal),
+                            fontWeight: isTotal
+                                ? FontWeight.bold
+                                : (isBold ? FontWeight.bold : FontWeight.normal),
                             color: isTotal ? const Color(0xFFD39054) : const Color(0xFF1E1E1E),
                           ),
                         ),
@@ -114,14 +118,17 @@ String formatTanggal(String time) {
                       value,
                       style: TextStyle(
                         fontSize: isTotal ? 16 : 14,
-                        fontWeight: isTotal ? FontWeight.bold : (isBold ? FontWeight.bold : FontWeight.normal),
+                        fontWeight: isTotal
+                            ? FontWeight.bold
+                            : (isBold ? FontWeight.bold : FontWeight.normal),
                         color: isTotal ? const Color(0xFFD39054) : const Color(0xFF1E1E1E),
                       ),
-                      overflow: TextOverflow.ellipsis, // ✅ Mencegah teks terlalu panjang
+                      overflow: TextOverflow.ellipsis, // Prevent overflow
                       maxLines: 1,
                     ),
             ),
           ),
+          // Action button (if any)
           if (trailing != null) ...[const SizedBox(width: 8), trailing],
         ],
       ),

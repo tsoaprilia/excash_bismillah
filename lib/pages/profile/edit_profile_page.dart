@@ -17,7 +17,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController businessNameController = TextEditingController();
   File? _image;
-  int? userId;
+  String? userId;
   String? password; // Simpan password agar tidak hilang
 
   @override
@@ -28,7 +28,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    userId = prefs.getInt('user_id');
+    userId = prefs.getString('user_id');
 
     if (userId != null) {
       final user = await ExcashDatabase.instance.getUserById(userId!);

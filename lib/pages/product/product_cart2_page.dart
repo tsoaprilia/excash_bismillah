@@ -38,7 +38,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
   Future<Map<String, dynamic>> getUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return {
-      'id': prefs.getInt('id') ?? 0,
+      'id': prefs.getString('id') ?? 'unknown',
       'name_lengkap': prefs.getString('name_lengkap') ?? "",
       'bisnis_name': prefs.getString('bisnis_name') ?? "",
     };
@@ -70,7 +70,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
   Future<void> saveTransaction() async {
     // Ambil ID user yang sedang login
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    int id = prefs.getInt('id') ?? 0;
+    String id = prefs.getString('id') ?? 'unknown';
 
     double finalTotal =
         getTotalPrice().toDouble(); // Total harga dari keranjang belanja
@@ -115,12 +115,18 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
         subtotal,
       );
 
-      // Update stok setelah berhasil menambahkan ke detail order
-      int updatedStock = (product.stock - quantity).toInt();
+      int updatedStock = product.stock - quantity;
       await ExcashDatabase.instance.updateProductStock(
-        int.tryParse(product.id_product!) ?? 0,
+        product.id_product, // id_product tetap sebagai String
         updatedStock,
       );
+
+      // Update stok setelah berhasil menambahkan ke detail order
+      // int updatedStock = (product.stock - quantity).toInt();
+      // await ExcashDatabase.instance.updateProductStock(
+      //   int.tryParse(product.id_product!) ?? 0,
+      //   updatedStock,
+      // );
     }
 
     // Panggil callback setelah transaksi berhasil
@@ -235,39 +241,42 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
                           border: Border(
-                              bottom:
-                                  BorderSide(color: Colors.black, width: 1)),
+                            bottom: BorderSide(color: Colors.black, width: 1),
+                          ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: const [
                             Expanded(
-                                flex: 3,
-                                child: Text("Nama Produk",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
+                              flex: 3,
+                              child: Text("Nama Produk",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                            ),
                             Expanded(
-                                flex: 1,
-                                child: Text("Jumlah",
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                    textAlign: TextAlign.center)),
+                              flex: 2,
+                              child: Text("",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center),
+                            ),
                             Expanded(
-                                flex: 2,
-                                child: Text("Harga",
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                    textAlign: TextAlign.right)),
+                              flex: 2,
+                              child: Text("Subtotal",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.right),
+                            ),
                           ],
                         ),
                       ),
 
                       // List produk
+                      // Displaying unit price along with total price for each product
                       Expanded(
                         child: ListView.builder(
                           itemCount: widget.cart.length,
                           itemBuilder: (context, index) {
                             final item = widget.cart[index];
+                            final product = item['product'] as Product;
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Row(
@@ -275,18 +284,21 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
-                                      flex: 3,
-                                      child:
-                                          Text(item['product'].name_product)),
+                                    flex: 3,
+                                    child: Text(product.name_product),
+                                  ),
                                   Expanded(
-                                      flex: 1,
-                                      child: Text('${item['quantity']}',
-                                          textAlign: TextAlign.center)),
+                                    flex: 2,
+                                    child: Text('${item['quantity']} x Rp ${product.price}',
+                                        textAlign: TextAlign.center),
+                                  ),
                                   Expanded(
-                                      flex: 2,
-                                      child: Text(
-                                          'Rp ${(item['product'].price * item['quantity']).toInt()}',
-                                          textAlign: TextAlign.right)),
+                                    flex: 2,
+                                    child: Text(
+                                      'Rp ${(product.price * item['quantity']).toInt()}',
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
                                 ],
                               ),
                             );

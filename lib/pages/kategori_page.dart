@@ -1,9 +1,10 @@
 import 'package:excash/database/excash_database.dart';
+import 'package:excash/main.dart';
 import 'package:excash/models/excash.dart';
 import 'package:excash/pages/add_edit_kategori_page.dart';
-import 'package:excash/pages/product/product_cart_page.dart';
 import 'package:excash/widgets/kategori_card_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
@@ -13,18 +14,79 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
+  String? _fullName;
   late List<Category> _categories;
   var _isLoading = false;
+  late List<Category> _filteredCategories;
+  final TextEditingController _searchController = TextEditingController();
 
+  // Mendapatkan nama pengguna dari SharedPreferences
+  Future<void> _getFullName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _fullName = prefs.getString('user_name') ?? 'Guest';
+    });
+  }
+
+Future<void> printCategoryData() async {
+  final db = await ExcashDatabase.instance.database;
+
+  // Query untuk mengambil semua data dari tabel category
+  List<Map<String, dynamic>> categories = await db.query('category');
+
+  // Debugging: Menampilkan hasil query di terminal
+  print("Isi tabel category:");
+
+  // Pastikan data ada, lalu tampilkan hasilnya
+  if (categories.isNotEmpty) {
+    categories.forEach((category) {
+      print("ID: ${category['id_category']}, Name: ${category['name_category']}");
+    });
+  } else {
+    print("Tabel category kosong.");
+  }
+}
+
+  // Memuat kategori dan menyaring data
   Future<void> _refreshCategory() async {
-    setState(() => _isLoading = true);
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
     _categories = await ExcashDatabase.instance.getAllCategory();
-    setState(() => _isLoading = false);
+    _filteredCategories = _categories.isNotEmpty ? _categories : [];
+
+    // Debugging untuk memastikan data kategori berhasil diambil
+    print("Data kategori berhasil diambil: $_categories");
+  } catch (e) {
+    print("Error saat mengambil data kategori: $e");
+    _filteredCategories = []; // Set ke list kosong jika ada error
+  }
+
+  setState(() {
+    _isLoading = false;
+  });
+}
+
+  // Fungsi untuk filter kategori berdasarkan pencarian
+  void _filterCategory(String query) {
+    final filtered = _categories.where((category) {
+      return category.name_category.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+
+    setState(() {
+      _filteredCategories = filtered;
+    });
   }
 
   @override
   void initState() {
     super.initState();
+    _getFullName();
+    _searchController.addListener(() {
+      _filterCategory(_searchController.text);
+    });
     _refreshCategory();
   }
 
@@ -40,38 +102,38 @@ class _CategoryPageState extends State<CategoryPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              width: 48, // Sesuaikan ukuran kotak agar proporsional
+              width: 48,
               height: 48,
               decoration: BoxDecoration(
                 color: const Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(12), // Border radius 12px
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(14), // Padding 4px di semua sisi
+                padding: const EdgeInsets.all(14),
                 child: Image.asset(
-                  'assets/img/excash_logo.png', // Sesuaikan dengan path file gambar
+                  'assets/img/excash_logo.png',
                   width: 24,
                   height: 24,
-                  fit: BoxFit.contain, // Pastikan gambar tidak terpotong
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
             Column(
-              children: const [
+              children: [
                 Text(
                   "Welcome",
                   style: TextStyle(
-                    color: Color(0xFF757B7B), // Warna #757B7B
-                    fontSize: 12, // Ukuran 12px
-                    fontWeight: FontWeight.w600, // Semi-bold
+                    color: Color(0xFF757B7B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
-                  "Aprilia Dwi Cristyana",
+                  _fullName ?? '',
                   style: TextStyle(
-                    color: Color(0xFF424242), // Warna #424242
-                    fontSize: 12, // Ukuran 12px
-                    fontWeight: FontWeight.w600, // Semi-bold
+                    color: Color(0xFF424242),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -81,29 +143,25 @@ class _CategoryPageState extends State<CategoryPage> {
               height: 48,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12), // Border radius 12px
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black
-                        .withOpacity(0.1), // Warna shadow lebih soft
-                    blurRadius: 8, // Efek shadow lebih lembut
-                    spreadRadius: 0, // Tidak menyebar terlalu jauh
-                    offset: Offset(0, 0), // Posisi shadow ke bawah
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: Offset(0, 0),
                   ),
                 ],
               ),
               child: IconButton(
                 icon: Icon(
-                  Icons
-                      .shopping_cart_outlined, // Gunakan versi outlined untuk garis
-                  size: 24, // Ukuran ikon
-                  color: Colors.black, // Warna ikon hitam
+                  Icons.settings_outlined,
+                  size: 24,
+                  color: Colors.black,
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ProductCartPage()),
-                  );
+                onPressed: () async {
+                  // Panggil fungsi izin
+                  await requestStoragePermission();
                 },
               ),
             ),
@@ -116,37 +174,36 @@ class _CategoryPageState extends State<CategoryPage> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Fill color FFFFFF
-                borderRadius: BorderRadius.circular(10), // Border radius 10 px
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black
-                        .withOpacity(0.1), // Warna shadow lebih soft
-                    blurRadius: 8, // Efek shadow lebih lembut
-                    spreadRadius: 0, // Tidak menyebar terlalu jauh
-                    offset: const Offset(0, 0), // Posisi shadow
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 0),
                   ),
                 ],
               ),
               child: TextField(
+                controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Cari Kategori barang apa?',
                   hintStyle: const TextStyle(
-                    color: Color(0xFF757B7B), // Warna hint text
-                    fontSize: 12, // Ukuran teks 12 px
-                    fontWeight: FontWeight.w400, // Regular
+                    color: Color(0xFF757B7B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
                   ),
                   prefixIcon: const Icon(
                     Icons.search,
-                    color: Color(0xFF1E1E1E), // Warna ikon search
-                    size: 14, // Ukuran ikon 14 px
+                    color: Color(0xFF1E1E1E),
+                    size: 14,
                   ),
                   filled: true,
-                  fillColor: Colors.white, // Warna latar belakang input field
+                  fillColor: Colors.white,
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(10), // Border radius 10 px
-                    borderSide: BorderSide.none, // Tidak ada border
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -163,13 +220,12 @@ class _CategoryPageState extends State<CategoryPage> {
                       Icons.format_list_bulleted_outlined,
                       color: Color(0xFF1E1E1E),
                     ),
-                    const SizedBox(
-                        width: 6), // Beri jarak sedikit antara ikon dan teks
+                    const SizedBox(width: 6),
                     const Text(
                       'Kategori Saya',
                       style: TextStyle(
                         color: Color(0xFF1E1E1E),
-                        fontWeight: FontWeight.w600, // Semi bold
+                        fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
@@ -179,29 +235,21 @@ class _CategoryPageState extends State<CategoryPage> {
                   onPressed: () async {
                     await showDialog(
                       context: context,
-                      barrierColor: Colors
-                          .transparent, // Agar background tidak full hitam
+                      barrierColor: Colors.transparent,
                       builder: (context) => const AddEditCategoryPage(),
                     );
                     _refreshCategory();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFF1E1E1E), // Warna latar tombol
+                    backgroundColor: const Color(0xFF1E1E1E),
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(12), // Border radius 12
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   child: const Text(
                     '+ Tambah',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500, // Medium
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -210,12 +258,12 @@ class _CategoryPageState extends State<CategoryPage> {
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _categories.isEmpty
+                  : _filteredCategories.isEmpty
                       ? const Center(child: Text('Kategori Kosong'))
                       : ListView.builder(
-                          itemCount: _categories.length,
+                          itemCount: _filteredCategories.length,
                           itemBuilder: (context, index) {
-                            final category = _categories[index];
+                            final category = _filteredCategories[index];
                             return CategoryCardWidget(
                               category: category,
                               index: index,
@@ -230,76 +278,3 @@ class _CategoryPageState extends State<CategoryPage> {
     );
   }
 }
-
-// import 'package:excash/database/excash_database.dart';
-// import 'package:excash/models/excash.dart';
-// import 'package:excash/pages/add_edit_kategori_page.dart';
-// import 'package:excash/widgets/kategori_card_widget.dart';
-// import 'package:flutter/material.dart';
-
-// class CategoryPage extends StatefulWidget {
-//   const CategoryPage({super.key});
-
-//   @override
-//   State<CategoryPage> createState() => _CategoryPageState();
-// }
-
-// class _CategoryPageState extends State<CategoryPage> {
-//   late List<Category> _categorys;
-//   var _isLoading = false;
-
-//   Future<void> _refreshCategory() async {
-//     setState(() {
-//       _isLoading = true;
-//     });
-//     _categorys = await ExcashDatabase.instance.getAllCategory();
-//     setState(() {
-//       _isLoading = false;
-//     });
-//   }
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _refreshCategory();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('Cateory'),
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         child: const Icon(Icons.add),
-//         onPressed: () async {
-//           await Navigator.push(
-//             context,
-//             MaterialPageRoute(
-//               builder: (context) => const AddEditCategoryPage(),
-//             ),
-//           );
-//           // Refresh categories after returning from Add/Edit page
-//           _refreshCategory();
-//         },
-//       ),
-//       body: _isLoading
-//           ? const Center(
-//               child: CircularProgressIndicator(),
-//             )
-//           : _categorys.isEmpty
-//               ? const Center(child: Text('Kategori Kosong'))
-//               : ListView.builder(
-//                   itemCount: _categorys.length,
-//                   itemBuilder: (context, index) {
-//                     final category = _categorys[index];
-//                     // Pass the refreshCategory method to CategoryCardWidget
-//                     return CategoryCardWidget(
-//                         category: category,
-//                         index: index,
-//                         refreshCategory:
-//                             _refreshCategory); // Pass the method here
-//                   }),
-//     );
-//   }
-// }

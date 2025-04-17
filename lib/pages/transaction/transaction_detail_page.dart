@@ -37,15 +37,15 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     return DateFormat('yyyy-MM-dd / HH:mm').format(dateTime);
   }
 
-  /// Ambil detail order dengan JOIN produk untuk mendapatkan nama produk
+  /// Ambil detail order dengan JOIN produk untuk mendapatkan nama produk dan harga satuan
   Future<List<Map<String, dynamic>>> fetchOrderDetails(int orderId) async {
     final db = await ExcashDatabase.instance.database;
     return await db.rawQuery('''
-      SELECT od.*, p.name_product AS nama_produk
-      FROM $tableOrderDetail od
-      JOIN $tableProduct p ON od.id_product = p.id_product
-      WHERE od.id_order = ?
-    ''', [orderId]);
+    SELECT od.*, p.name_product AS nama_produk, p.price AS harga_satuan
+    FROM $tableOrderDetail od
+    JOIN $tableProduct p ON od.id_product = p.id_product
+    WHERE od.id_order = ?
+  ''', [orderId]);
   }
 
   /// Fungsi cetak struk
@@ -55,7 +55,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       printer.printNewLine();
 
       // Header toko
-      printer.printCustom('TOKO ${userData.businessName}', 2, 1);
+      printer.printCustom('TOKO ${userData.businessName}', 1, 1);
       printer.printCustom('oleh excash', 1, 1);
 
       printer.printNewLine();
@@ -71,9 +71,13 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       printer.printCustom('Detail', 1, 1);
       printer.printCustom('--------------------------------', 1, 1);
 
+      // Print order details with unit price
       for (var detail in orderDetailsData) {
-        printer.printLeftRight('${detail['nama_produk']}',
-            '${detail['quantity']}x Rp ${detail['subtotal'].toInt()}', 1);
+        // Printing product name, quantity, unit price, and subtotal
+        printer.printLeftRight(
+            '${detail['nama_produk']}',
+            '${detail['quantity']}x${detail['harga_satuan'].toInt()} ${detail['subtotal'].toInt()}',
+            1);
       }
 
       printer.printCustom('--------------------------------', 1, 1);
@@ -204,7 +208,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                             border: TableBorder.all(color: Colors.black12),
                             columnWidths: const {
                               0: FlexColumnWidth(2),
-                              1: FlexColumnWidth(1),
+                              1: FlexColumnWidth(2),
                               2: FlexColumnWidth(2),
                             },
                             children: [
@@ -273,14 +277,18 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     return TableRow(
       children: [
         Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(detail['nama_produk'])), // Nama Produk
+          padding: const EdgeInsets.all(8.0),
+          child: Text(detail['nama_produk']), // Nama Produk
+        ),
         Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(detail['quantity'].toString())),
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+              "${detail['quantity'].toString()} x Rp ${detail['harga_satuan'].toInt()}"), // Quantity
+        ),
         Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text("Rp ${detail['subtotal'].toInt()}")),
+          padding: const EdgeInsets.all(8.0),
+          child: Text("Rp ${detail['subtotal'].toInt()}"), // Subtotal
+        ),
       ],
     );
   }

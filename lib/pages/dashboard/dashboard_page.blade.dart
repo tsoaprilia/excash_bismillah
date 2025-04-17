@@ -98,14 +98,18 @@ class _DashboardPageState extends State<DashboardPage> {
             .toIso8601String()
             .split('T')[0];
 
+    // Convert selected month to its corresponding number (e.g., Januari -> 01)
+    String monthNumber =
+        (months.indexOf(selectedMonthFilter) + 1).toString().padLeft(2, '0');
+
     await db.transaction((txn) async {
       var todayIncome = await txn.rawQuery(
           "SELECT SUM(total_price) as income, COUNT(id_order) as transactions FROM orders WHERE date(created_at) = ?",
           [today]);
 
       var monthIncome = await txn.rawQuery(
-          "SELECT SUM(total_price) as income, COUNT(id_order) as transactions FROM orders WHERE date(created_at) >= ?",
-          [firstDayOfMonth]);
+          "SELECT SUM(total_price) as income, COUNT(id_order) as transactions FROM orders WHERE strftime('%m', created_at) = ?",
+          [monthNumber]); // Filter by selected month
 
       // Pastikan hasil query tidak null sebelum diakses
       num todayIncomeValue =
@@ -203,7 +207,7 @@ class _DashboardPageState extends State<DashboardPage> {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Container(
               width: 48,
@@ -228,55 +232,17 @@ class _DashboardPageState extends State<DashboardPage> {
                 },
               ),
             ),
-            Column(
-              children: const [
-                Text(
-                  "Welcome",
-                  style: TextStyle(
-                    color: Color(0xFF757B7B),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+            const Padding(
+              padding: EdgeInsets.only(left: 16.0),
+              child: Text(
+                "Dashboard Reporting",
+                style: TextStyle(
+                  color: Color(0xFF424242),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                Text(
-                  "Aprilia Dwi Cristyana",
-                  style: TextStyle(
-                    color: Color(0xFF424242),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: Offset(0, 0),
-                  ),
-                ],
               ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.shopping_cart_outlined,
-                  size: 24,
-                  color: Colors.black,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ProductCartPage()),
-                  );
-                },
-              ),
-            ),
+            )
           ],
         ),
       ),
@@ -301,23 +267,51 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildStatsCards() {
     return Column(
       children: [
+        // Row for "Penghasilan" text and DropdownButton
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-                child: _bigStatCard(
-                    "Penghasilan Hari Ini",
-                    incomeData?['hari_ini']?['income'] ?? "0",
-                    "${incomeData?['hari_ini']?['transactions'] ?? "0"} transaksi")),
+            const Text(
+              "Penghasilan",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            DropdownButton<String>(
+              value: selectedMonthFilter,
+              onChanged: (newMonthValue) {
+                setState(() {
+                  selectedMonthFilter = newMonthValue!;
+                });
+                _fetchData(); // Update products when month changes
+              },
+              items: months.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
           ],
         ),
-        const SizedBox(height: 10),
+
+        // Row for both "Hari Ini" and "Bulan Ini" cards side by side
         Row(
+          mainAxisAlignment:
+              MainAxisAlignment.start, // Align cards to the start
           children: [
             Expanded(
               child: _bigStatCard(
-                  "Penghasilan Bulan Ini",
-                  incomeData!['bulan_ini']['income'],
-                  "${incomeData!['bulan_ini']['transactions']} transaksi "),
+                "Hari Ini",
+                incomeData?['hari_ini']?['income'] ?? "0",
+                "${incomeData?['hari_ini']?['transactions'] ?? "0"} transaksi",
+              ),
+            ),
+            const SizedBox(width: 10), // Space between the two cards
+            Expanded(
+              child: _bigStatCard(
+                "Bulan Ini",
+                incomeData!['bulan_ini']['income'],
+                "${incomeData!['bulan_ini']['transactions']} transaksi ",
+              ),
             ),
           ],
         ),

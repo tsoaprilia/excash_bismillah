@@ -5,6 +5,7 @@ import 'package:excash/pages/product/product_cart_page.dart';
 import 'package:excash/widgets/product/product_card_widget.dart';
 import 'package:excash/widgets/transaction/transaction_card_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TransactionPage extends StatefulWidget {
   const TransactionPage({super.key});
@@ -14,36 +15,59 @@ class TransactionPage extends StatefulWidget {
 }
 
 class _TransactionPageState extends State<TransactionPage> {
+  String? _fullName;
   late List<TransactionData> _transactions = [];
   var _isLoading = false;
 
-  Future<void> _fetchTransactions() async {
-  if (_isLoading) return;  // Jangan biarkan refresh berjalan jika sedang loading
-  setState(() => _isLoading = true);
-    // Ambil semua transaksi dari database
-    final orders = await ExcashDatabase.instance.getAllTransactions();
+  final TextEditingController _searchController = TextEditingController();
+  List<TransactionData> _filteredTransactions = [];
 
-    // Buat daftar transaksi dengan produk dari tabel order_details
-    List<TransactionData> transactions = [];
-
-    for (var order in orders) {
-      transactions.add(TransactionData(
-        transactionId: order.id_order.toString(),
-        total: "Rp. ${order.total_price}",
-        time: order.created_at.toString(), // Ubah order_date ke created_at
-      ));
-    }
-
+  Future<void> _getFullName() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _transactions = transactions;
-      _isLoading = false;
+      _fullName =
+          prefs.getString('user_name') ?? 'Guest'; // Ambil dari key yang benar
     });
   }
+
+  void _filterTransactionsById(String query) {
+    final filtered = _transactions.where((transaction) {
+      return transaction.transactionId.contains(query);
+    }).toList();
+
+    setState(() {
+      _filteredTransactions = filtered;
+    });
+  }
+
+  Future<void> _fetchTransactions() async {
+  if (_isLoading) return;
+
+  setState(() => _isLoading = true);
+
+  final orders = await ExcashDatabase.instance.getAllTransactions();
+
+  List<TransactionData> transactions = orders.map((order) {
+    return TransactionData(
+      transactionId: order.id_order.toString(),
+      total: "Rp. ${order.total_price}",
+      time: order.created_at.toString(),
+    );
+  }).toList();
+
+  setState(() {
+    _transactions = transactions;
+    _filteredTransactions = transactions; // set awal data hasil filter
+    _isLoading = false;
+  });
+}
+
 
   @override
   void initState() {
     super.initState();
     _fetchTransactions();
+    _getFullName();
   }
 
   @override
@@ -75,7 +99,7 @@ class _TransactionPageState extends State<TransactionPage> {
               ),
             ),
             Column(
-              children: const [
+              children: [
                 Text(
                   "Welcome",
                   style: TextStyle(
@@ -85,7 +109,7 @@ class _TransactionPageState extends State<TransactionPage> {
                   ),
                 ),
                 Text(
-                  "Aprilia Dwi Cristyana",
+                  _fullName ?? '',
                   style: TextStyle(
                     color: Color(0xFF424242),
                     fontSize: 12,
@@ -126,8 +150,19 @@ class _TransactionPageState extends State<TransactionPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
+                 boxShadow: [
+                  BoxShadow(
+                    color: Colors.black
+                        .withOpacity(0.1), // Warna shadow lebih soft
+                    blurRadius: 8, // Efek shadow lebih lembut
+                    spreadRadius: 0, // Tidak menyebar terlalu jauh
+                    offset: const Offset(0, 0), // Posisi shadow
+                  ),
+                ],
               ),
               child: TextField(
+                controller: _searchController,
+                onChanged: _filterTransactionsById, // trigger filter tiap ketik
                 decoration: InputDecoration(
                   hintText: 'Cari Transaksi',
                   hintStyle: const TextStyle(
@@ -184,9 +219,9 @@ class _TransactionPageState extends State<TransactionPage> {
                           onRefresh:
                               _fetchTransactions, // Menambahkan onRefresh
                           child: ListView.builder(
-                            itemCount: _transactions.length,
+                            itemCount: _filteredTransactions.length,
                             itemBuilder: (context, index) {
-                              final transaction = _transactions[index];
+                              final transaction = _filteredTransactions[index];
                               return TransactionCardWidget(
                                 transactionId: transaction.transactionId,
                                 total: transaction.total,
@@ -194,8 +229,7 @@ class _TransactionPageState extends State<TransactionPage> {
                                 refreshTransaction: _fetchTransactions,
                               );
                             },
-                          ),
-                        ),
+                          )),
             ),
           ],
         ),

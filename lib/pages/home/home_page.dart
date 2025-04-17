@@ -6,6 +6,7 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/product.dart';
 import 'package:excash/pages/product/product_cart2_page.dart';
 import 'package:excash/widgets/product/product_card_beli_widget.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,9 +17,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  Map<String, int> _categoryMap = {};
+
   String _userName = "Nama Pengguna";
   String _userEmail = "Email Pengguna";
   String _userbusinessName = "Nama Bisnis";
+
+  TextEditingController searchController = TextEditingController();
+  List<Product> filteredProducts = [];
 
   List<Product> _products = [];
   List<String> _categories = ["Semua"];
@@ -65,11 +71,19 @@ class _HomePageState extends State<HomePage> {
     setState(() => _isLoading = true);
     try {
       final categoriesData = await ExcashDatabase.instance.getAllCategory();
+      final categories = <String>{"Semua"};
+      _categoryMap.clear();
+
+      for (var category in categoriesData) {
+        categories.add(category.name_category);
+        _categoryMap[category.name_category] = category.id_category!;
+      }
+
       final products = await ExcashDatabase.instance.getAllProducts();
 
       setState(() {
-        _categories = ["Semua", ...categoriesData.map((c) => c.name_category)];
         _products = products;
+        _categories = categories.toList()..sort();
         _isLoading = false;
       });
     } catch (e) {
@@ -77,13 +91,33 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  List<Product> _getFilteredProducts() {
-    if (_selectedCategory == "Semua") {
-      return _products;
+  void _filterProducts(String query) {
+    setState(() {
+      // Tidak perlu lakukan apapun di sini, hanya trigger rebuild
+    });
+  }
+
+  Future<void> scanBarcode() async {
+    String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        "#ff6666", "Cancel", true, ScanMode.BARCODE);
+
+    if (barcodeScanRes != "-1") {
+      _filterProducts(barcodeScanRes); // filter langsung
     }
-    return _products
-        .where((product) => product.category == _selectedCategory)
-        .toList();
+  }
+
+  List<Product> _getFilteredProducts() {
+    final query = searchController.text.toLowerCase();
+    final selectedCategoryId = _categoryMap[_selectedCategory];
+
+    return _products.where((product) {
+      final nameMatch = product.name_product.toLowerCase().contains(query);
+      final idMatch = product.id_product.toLowerCase().contains(query);
+      final categoryMatch = _selectedCategory == "Semua"
+          ? true
+          : product.id_category == selectedCategoryId;
+      return (nameMatch || idMatch) && categoryMatch;
+    }).toList();
   }
 
   void _updateTotalAmount(Product product, int change) {
@@ -220,6 +254,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   );
+                  _refreshProducts();
                 },
               ),
             ),
@@ -230,59 +265,110 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Cari Produk',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF757B7B),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: Color(0xFF1E1E1E),
-                    size: 14,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
+            // Search Field
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.shopping_cart_outlined,
-                      color: Color(0xFF1E1E1E),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withOpacity(0.1), // Warna shadow lebih soft
+                          blurRadius: 8, // Efek shadow lebih lembut
+                          spreadRadius: 0, // Tidak menyebar terlalu jauh
+                          offset: const Offset(0, 0), // Posisi shadow
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Order Disini',
-                      style: TextStyle(
-                        color: Color(0xFF1E1E1E),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          _filterProducts(value);
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Cari barang apa?',
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF757B7B),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Color(0xFF1E1E1E),
+                          size: 14,
+                        ),
+                        suffixIcon: searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  setState(() {
+                                    searchController.clear();
+                                    _filterProducts('');
+                                  });
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 16),
                       ),
                     ),
-                  ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  height: 48,
+                  width: 48,
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1E1E1E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons
+                          .qr_code_scanner, // kamu juga bisa pakai Icons.document_scanner atau lainnya
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    onPressed: scanBarcode,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     Row(
+            //       children: [
+            //         const Icon(
+            //           Icons.shopping_cart_outlined,
+            //           color: Color(0xFF1E1E1E),
+            //         ),
+            //         const SizedBox(width: 6),
+            //         const Text(
+            //           'Order Disini',
+            //           style: TextStyle(
+            //             color: Color(0xFF1E1E1E),
+            //             fontWeight: FontWeight.w600,
+            //             fontSize: 14,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ],
+            // ),
+            // const SizedBox(height: 10),
 
             // Kategori Produk
             SizedBox(
@@ -360,6 +446,7 @@ class _HomePageState extends State<HomePage> {
                           cart.clear(); // Reset cart
                           totalAmount = 0; // Reset total amount
                         });
+                        _refreshProducts();
                       },
                     ),
                   ),

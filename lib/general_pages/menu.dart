@@ -4,6 +4,7 @@ import 'package:excash/pages/product/product_page.dart';
 import 'package:excash/pages/profile/profile_page.dart';
 import 'package:excash/pages/transaction/transaction_page.dart';
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -13,6 +14,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  final GlobalKey _homeShowcaseKey = GlobalKey();
+
   int _selectedIndex = 0;
   final List<Widget> _pages = [
     HomePage(),
@@ -25,6 +28,17 @@ class _MainScreenState extends State<MainScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Menunda eksekusi hingga widget dibangun
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ShowCaseWidget.of(context).startShowCase([
+        _homeShowcaseKey,
+      ]);
     });
   }
 
@@ -96,8 +110,31 @@ class _MainScreenState extends State<MainScreen> {
   // Fungsi untuk membuat item navigasi dengan ikon yang berubah
   BottomNavigationBarItem _buildNavItem(
       IconData iconOutlined, IconData iconFilled, int index) {
+    final icon = Icon(_selectedIndex == index ? iconFilled : iconOutlined);
+
+    if (index == 0) {
+      // Hanya tambahkan ShowcaseView untuk Home
+      return BottomNavigationBarItem(
+        icon: Showcase(
+          key: _homeShowcaseKey,
+          title: 'Order Disini!',
+          description: '', // tetap harus ada meskipun kosong
+          titleTextStyle: const TextStyle(
+            color: Color(0xFFD39054),
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+           
+          ),
+          titleTextAlign: TextAlign.center,
+          descTextStyle: const TextStyle(fontSize: 0), // hide desc
+          child: icon,
+        ),
+        label: '',
+      );
+    }
+
     return BottomNavigationBarItem(
-      icon: Icon(_selectedIndex == index ? iconFilled : iconOutlined),
+      icon: icon,
       label: '',
     );
   }
@@ -116,58 +153,3 @@ class HalfCircleClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(HalfCircleClipper oldClipper) => false;
 }
-
-
-// import 'package:excash/pages/home/home_page.dart';
-// import 'package:excash/pages/kategori_page.dart';
-// import 'package:excash/pages/product/product_page.dart';
-// import 'package:excash/pages/profile/profile_page.dart';
-// import 'package:excash/pages/transaction/transaction_page.dart'; 
-// import 'package:flutter/material.dart';
-
-// class MainScreen extends StatefulWidget {
-//   const MainScreen({super.key});
-
-//   @override
-//   _MainScreenState createState() => _MainScreenState();
-// }
-
-// class _MainScreenState extends State<MainScreen> {
-//   int _selectedIndex = 0;
-//   final List<Widget> _pages = [
-//     HomePage(),
-//     CategoryPage(), 
-//     ProductPage(),
-//     TransactionPage(), 
-//     profilePage(), 
-//   ];
-
-//   void _onItemTapped(int index) {
-//     setState(() {
-//       _selectedIndex = index;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: IndexedStack(
-//         index: _selectedIndex,
-//         children: _pages,
-//       ),
-//       bottomNavigationBar: BottomNavigationBar(
-//         items: const [
-//           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-//           BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Category'),
-//           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Product'),
-//           BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Log Transaksi'),
-//           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-//         ],
-//         currentIndex: _selectedIndex,
-//         selectedItemColor: Colors.blue,
-//         unselectedItemColor: Colors.grey,
-//         onTap: _onItemTapped,
-//       ),
-//     );
-//   }
-// }

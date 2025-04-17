@@ -38,9 +38,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
 
-Future<void> saveUserData(int idUser, String nameLengkap, String bisnisName) async {
+Future<void> saveUserData(String idUser, String nameLengkap, String bisnisName) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.setInt('id_user', idUser);
+  await prefs.setString('id_user', idUser);
   await prefs.setString('name_lengkap', nameLengkap);
   await prefs.setString('bisnis_name', bisnisName);
 }
@@ -52,8 +52,8 @@ Future<void> loginUser() async {
 
   final user = await ExcashDatabase.instance.loginUser(email, password);
   if (user != null) {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('user_id', user.id!);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_id', user.id!);  // Pastikan ID disimpan di sini
     await prefs.setString('user_name', user.fullName);
     await prefs.setString('user_email', user.email);
     await prefs.setString('user_business_name', user.businessName);

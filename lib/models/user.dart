@@ -10,7 +10,7 @@ class UserFields {
 }
 
 class User {
-  final int? id;
+  final String? id;
   final String email;
   final String fullName;
   final String businessName;
@@ -27,7 +27,7 @@ class User {
   });
 
   User copy({
-    int? id,
+    String? id,
     String? email,
     String? fullName,
     String? businessName,
@@ -45,7 +45,7 @@ class User {
       );
 
   static User fromJson(Map<String, Object?> json) => User(
-        id: json[UserFields.id] as int?,
+        id: json[UserFields.id] as String?,
         email: json[UserFields.email] as String,
         fullName: json[UserFields.fullName] as String,
         businessName: json[UserFields.businessName] as String,

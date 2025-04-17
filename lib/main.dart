@@ -4,6 +4,7 @@ import 'package:excash/general_pages/auth/auth_page.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 // Fungsi untuk meminta izin penyimpanan
 Future<void> requestStoragePermission() async {
@@ -60,10 +61,9 @@ Future<void> saveFileToDownload() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await requestStoragePermission();
 
   FileManager fileManager = FileManager();
-
-  // Memanggil fungsi untuk mendapatkan path penyimpanan eksternal
   String? externalPath = await fileManager.getExternalStoragePath();
 
   if (externalPath != null) {
@@ -72,7 +72,11 @@ void main() async {
     print("Gagal mendapatkan path penyimpanan eksternal.");
   }
 
-  runApp(MyApp());
+  runApp(
+    ShowCaseWidget(
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

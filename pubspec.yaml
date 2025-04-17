@@ -30,6 +30,8 @@ dependencies:
   csv: ^6.0.0
   open_file: ^3.3.2
   path_provider: ^2.1.4
+  uuid: ^4.5.1
+  showcaseview: ^4.0.1
 
 dev_dependencies:
   flutter_test:

@@ -2,6 +2,7 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/excash.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -58,6 +59,14 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
   List<Map<String, dynamic>> _categories = [];
   String? _selectedCategory;
 
+  Future<int?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('id_user');
+    print('User ID: $userId'); // Debugging
+    return userId;
+  }
+
+  
   @override
   void initState() {
     super.initState();

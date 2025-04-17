@@ -2,6 +2,7 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/excash.dart';
 import 'package:excash/widgets/Ketegori_form_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddEditCategoryPage extends StatefulWidget {
   final Category? category;
@@ -16,21 +17,39 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
   final _formKey = GlobalKey<FormState>();
   late String _nameCategory;
   late bool _isUpdateForm;
+  String? _Id;
 
   @override
   void initState() {
     super.initState();
     _nameCategory = widget.category?.name_category ?? '';
     _isUpdateForm = widget.category != null;
+    _loadId();
+  }
+
+  // Memuat ID dari SharedPreferences
+  Future<void> _loadId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _Id = prefs.getString('user_id'); // Pastikan menggunakan 'user_id'
+    });
+  }
+
+  // Mengambil ID user dari SharedPreferences
+  Future<String?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId =
+        prefs.getString('user_id'); // Mengambil ID pengguna yang login
+    print('User ID: $userId'); // Debugging
+    return userId;
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () =>
-          Navigator.pop(context), // Tutup modal jika di luar area ditekan
+      onTap: () => Navigator.pop(context),
       child: Scaffold(
-        backgroundColor: Colors.black.withOpacity(0.4), // Efek blur background
+        backgroundColor: Colors.black.withOpacity(0.4),
         body: Center(
           child: Container(
             width: MediaQuery.of(context).size.width * 0.9,
@@ -70,23 +89,23 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
     );
   }
 
-  /// Bagian header modal
+  // Header dari halaman
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
-          children: const [
+          children: [
             Icon(Icons.event_note_outlined, color: Color(0xFF1E1E1E)),
             SizedBox(width: 8),
             Text(
-              "Tambah Kategori",
+              _isUpdateForm ? "Edit Kategori" : "Tambah Kategori",
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF424242),
               ),
-            ),
+            )
           ],
         ),
         Container(
@@ -94,13 +113,13 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
           height: 48,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12), // Border radius 12px
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1), // Warna shadow lebih soft
-                blurRadius: 8, // Efek shadow lebih lembut
-                spreadRadius: 0, // Tidak menyebar terlalu jauh
-                offset: Offset(0, 0), // Posisi shadow ke bawah
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                spreadRadius: 0,
+                offset: Offset(0, 0),
               ),
             ],
           ),
@@ -113,18 +132,28 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
     );
   }
 
-  /// Tombol simpan kategori
+  // Tombol simpan kategori
   Widget _buildSaveButton() {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () async {
           if (_formKey.currentState!.validate()) {
-            if (_isUpdateForm) {
-              await _updateCategory();
-            } else {
-              await _addCategory();
+            final userId = await _getUserId(); // Ambil userId
+
+            if (userId == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("User belum login")),
+              );
+              return;
             }
+
+            if (_isUpdateForm) {
+              await _updateCategory(); // Update kategori jika sudah ada
+            } else {
+              await _addCategory(userId); // Tambah kategori baru jika belum ada
+            }
+
             Navigator.pop(context);
           }
         },
@@ -136,7 +165,7 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
           padding: const EdgeInsets.symmetric(vertical: 14),
         ),
         child: const Text(
-          "Tambah Kategori",
+          "Simpan Kategori",
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -147,8 +176,10 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
     );
   }
 
-  Future<void> _addCategory() async {
+  // Menambahkan kategori baru
+  Future<void> _addCategory(String userId) async {
     final category = Category(
+      id: userId, // Gunakan ID yang diambil dari _getUserId()
       name_category: _nameCategory,
       created_at_category: DateTime.now(),
       updated_at_category: DateTime.now(),
@@ -156,91 +187,13 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
     await ExcashDatabase.instance.create(category);
   }
 
+  // Mengupdate kategori yang sudah ada
   Future<void> _updateCategory() async {
     final updatedCategory = widget.category!.copy(
+      id: widget.category!.id, // Tambahkan ini jika `id` wajib saat update
       name_category: _nameCategory,
       updated_at_category: DateTime.now(),
     );
     await ExcashDatabase.instance.updateCategory(updatedCategory);
   }
 }
-
-// import 'package:excash/database/excash_database.dart';
-// import 'package:excash/models/excash.dart';
-// import 'package:excash/widgets/Ketegori_form_widget.dart';
-// import 'package:flutter/material.dart';
-
-// class AddEditCategoryPage extends StatefulWidget {
-//   final Category? category;
-
-//   const AddEditCategoryPage({super.key, this.category});
-
-//   @override
-//   State<AddEditCategoryPage> createState() => _AddEditCategoryPageState();
-// }
-
-// class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
-//   final _formKey = GlobalKey<FormState>();
-//   late String _nameCategory;
-//   late bool _isUpdateForm;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _nameCategory = widget.category?.name_category ?? '';
-//     _isUpdateForm = widget.category != null;
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text(_isUpdateForm ? 'Edit Category' : 'Add Category'),
-//         actions: [_saveCategoryButton()],
-//       ),
-//       body: Form(
-//         key: _formKey,
-//         child: CategoryFormWidget(
-//           nameCategory: _nameCategory,
-//           onChangeNameCategory: (value) => setState(() => _nameCategory = value),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _saveCategoryButton() {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-//       child: ElevatedButton(
-//         onPressed: () async {
-//           if (_formKey.currentState!.validate()) {
-//             if (_isUpdateForm) {
-//               await _updateCategory();
-//             } else {
-//               await _addCategory();
-//             }
-//             Navigator.pop(context);
-//           }
-//         },
-//         child: const Text('Save'),
-//       ),
-//     );
-//   }
-
-//   Future<void> _addCategory() async {
-//     final category = Category(
-//       name_category: _nameCategory,
-//       created_at_category: DateTime.now(),
-//       updated_at_category: DateTime.now(),
-//     );
-//     await ExcashDatabase.instance.create(category);
-//   }
-
-//   Future<void> _updateCategory() async {
-//     final updatedCategory = widget.category!.copy(
-//       name_category: _nameCategory,
-//       updated_at_category: DateTime.now(),
-//     );
-//     await ExcashDatabase.instance.updateCategory(updatedCategory);
-//   }
-// }
