@@ -28,46 +28,47 @@ class _CategoryPageState extends State<CategoryPage> {
     });
   }
 
-Future<void> printCategoryData() async {
-  final db = await ExcashDatabase.instance.database;
+  Future<void> printCategoryData() async {
+    final db = await ExcashDatabase.instance.database;
 
-  // Query untuk mengambil semua data dari tabel category
-  List<Map<String, dynamic>> categories = await db.query('category');
+    // Query untuk mengambil semua data dari tabel category
+    List<Map<String, dynamic>> categories = await db.query('category');
 
-  // Debugging: Menampilkan hasil query di terminal
-  print("Isi tabel category:");
+    // Debugging: Menampilkan hasil query di terminal
+    print("Isi tabel category:");
 
-  // Pastikan data ada, lalu tampilkan hasilnya
-  if (categories.isNotEmpty) {
-    categories.forEach((category) {
-      print("ID: ${category['id_category']}, Name: ${category['name_category']}");
-    });
-  } else {
-    print("Tabel category kosong.");
+    // Pastikan data ada, lalu tampilkan hasilnya
+    if (categories.isNotEmpty) {
+      categories.forEach((category) {
+        print(
+            "ID: ${category['id_category']}, Name: ${category['name_category']}");
+      });
+    } else {
+      print("Tabel category kosong.");
+    }
   }
-}
 
   // Memuat kategori dan menyaring data
   Future<void> _refreshCategory() async {
-  setState(() {
-    _isLoading = true;
-  });
+    setState(() {
+      _isLoading = true;
+    });
 
-  try {
-    _categories = await ExcashDatabase.instance.getAllCategory();
-    _filteredCategories = _categories.isNotEmpty ? _categories : [];
+    try {
+      _categories = await ExcashDatabase.instance.getAllCategory();
+      _filteredCategories = _categories.isNotEmpty ? _categories : [];
 
-    // Debugging untuk memastikan data kategori berhasil diambil
-    print("Data kategori berhasil diambil: $_categories");
-  } catch (e) {
-    print("Error saat mengambil data kategori: $e");
-    _filteredCategories = []; // Set ke list kosong jika ada error
+      // Debugging untuk memastikan data kategori berhasil diambil
+      print("Data kategori berhasil diambil: $_categories");
+    } catch (e) {
+      print("Error saat mengambil data kategori: $e");
+      _filteredCategories = []; // Set ke list kosong jika ada error
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
-
-  setState(() {
-    _isLoading = false;
-  });
-}
 
   // Fungsi untuk filter kategori berdasarkan pencarian
   void _filterCategory(String query) {
@@ -233,23 +234,29 @@ Future<void> printCategoryData() async {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      barrierColor: Colors.transparent,
-                      builder: (context) => const AddEditCategoryPage(),
-                    );
-                    _refreshCategory();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddEditCategoryPage(),
+                      ),
+                    ).then((_) {
+                      _refreshCategory(); // Panggil _refreshCategory setelah halaman AddEditCategoryPage ditutup
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E1E1E),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   child: const Text(
                     '+ Tambah',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

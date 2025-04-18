@@ -15,10 +15,6 @@ class CategoryCardWidget extends StatelessWidget {
     required this.refreshCategory,
   });
 
-  
-
-
-
   void showNotificationDialog(BuildContext context, bool isSuccess) {
     showDialog(
       context: context,
@@ -201,13 +197,15 @@ class CategoryCardWidget extends StatelessWidget {
                       size: 16,
                     ),
                     onPressed: () async {
-                      await showDialog(
-                        context: context,
-                        barrierColor: Colors.transparent,
-                        builder: (context) =>
-                            AddEditCategoryPage(category: category),
-                      );
-                      refreshCategory(); // Panggil refresh setelah dialog ditutup
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              AddEditCategoryPage(category: category),
+                        ),
+                      ).then((_) {
+                        refreshCategory(); // Panggil refresh setelah halaman AddEditCategoryPage ditutup
+                      });
                     },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),

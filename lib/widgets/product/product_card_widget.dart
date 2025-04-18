@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ProductCardWidget extends StatefulWidget {
   final Product product;
   final List<Category> categories;
-  final VoidCallback refreshProduct;
+  final Future<void> Function() refreshProduct;
   final Function(Product, int) updateStock;
 
   const ProductCardWidget({
@@ -305,13 +305,19 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                               size: 16,
                             ),
                             onPressed: () async {
-                              await showDialog(
-                                context: context,
-                                barrierColor: Colors.transparent,
-                                builder: (context) =>
-                                    AddEditProductPage(product: widget.product),
-                              );
-                              widget.refreshProduct();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddEditProductPage(
+                                    product: widget.product,
+                                    refreshProducts: widget
+                                        .refreshProduct, // Pass refresh callback
+                                  ),
+                                ),
+                              ).then((_) {
+                                widget
+                                    .refreshProduct(); // Panggil refresh setelah halaman AddEditProductPage ditutup
+                              });
                             },
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),

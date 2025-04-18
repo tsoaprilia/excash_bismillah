@@ -65,7 +65,7 @@ Future<void> pickFile(String fileType) async {
     final importData = ImportData();
 
     if (userFile != null) {
-      await importData.importFromCSV(userFile!, 'user');
+      await importData.importFromCSV(userFile!, 'users');
       await printAllUsers();
       _refreshUsers();  // Refresh after importing user data
     }
@@ -80,12 +80,12 @@ Future<void> pickFile(String fileType) async {
       _refreshProducts();  // Refresh after importing product data
     }
     if (orderFile != null) {
-      await importData.importFromCSV(orderFile!, 'order');
+      await importData.importFromCSV(orderFile!, 'orders');
       await printOrderData(); // Debugging log
       _refreshOrders();  // Refresh after importing order data
     }
     if (orderDetailFile != null) {
-      await importData.importFromCSV(orderDetailFile!, 'orderDetail');
+      await importData.importFromCSV(orderDetailFile!, 'order_detail');
       await printOrderDetailData(); // Debugging log
       _refreshOrderDetails();  // Refresh after importing order details data
     }

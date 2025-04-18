@@ -1,6 +1,7 @@
 import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/excash.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
@@ -122,6 +123,7 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
       print("❌ Error saat mengambil kategori: $e");
     }
   }
+  
 
   @override
   void dispose() {
@@ -196,39 +198,51 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
   }
 
   Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    required ValueChanged<String> onChanged,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), // Sesuai gambar
-            borderSide: const BorderSide(color: Colors.black), // Default border
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.black), // Border normal
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-                color: Color(0xFFD39054), width: 2), // Border aktif
-          ),
-          labelText: label,
+  required String label,
+  required TextEditingController controller,
+  required ValueChanged<String> onChanged,
+  TextInputType keyboardType = TextInputType.text,
+  int maxLines = 1,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12), // Sesuai gambar
+          borderSide: const BorderSide(color: Colors.black), // Default border
         ),
-        onChanged: onChanged,
-        keyboardType: keyboardType,
-        maxLines: maxLines,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.black), // Border normal
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+              color: Color(0xFFD39054), width: 2), // Border aktif
+        ),
+        labelText: label,
       ),
-    );
-  }
-
+      onChanged: onChanged,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      inputFormatters: label == 'Stok Produk' // Cek jika input adalah stok
+          ? [
+              FilteringTextInputFormatter.digitsOnly, // Hanya angka
+              TextInputFormatter.withFunction((oldValue, newValue) {
+                // Validasi agar stok tidak kurang dari 0
+                if (int.tryParse(newValue.text) != null &&
+                    int.parse(newValue.text) < 0) {
+                  return oldValue; // Kembalikan nilai sebelumnya jika negatif
+                }
+                return newValue; // Jika valid, terima nilai baru
+              })
+            ]
+          : [],
+    ),
+  );
+}
   Widget _buildCategoryDropdown() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),

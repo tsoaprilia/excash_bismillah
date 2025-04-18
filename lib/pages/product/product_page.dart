@@ -69,11 +69,14 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Future<void> _refreshProducts() async {
-    setState(() => _isLoading = true);
-    _products = await ExcashDatabase.instance.getAllProducts();
-    _categories = await ExcashDatabase.instance.getAllCategory();
-    filteredProducts = _products;
-    setState(() => _isLoading = false);
+    setState(() => _isLoading = true); // Set loading untuk memberi indikasi
+    _products =
+        await ExcashDatabase.instance.getAllProducts(); // Memuat ulang produk
+    _categories =
+        await ExcashDatabase.instance.getAllCategory(); // Memuat kategori
+    filteredProducts = _products; // Update data produk yang terfilter
+    setState(() =>
+        _isLoading = false); // Hentikan loading setelah data selesai diambil
   }
 
 // Fungsi untuk menambah atau mengurangi stok
@@ -307,12 +310,19 @@ class _ProductPageState extends State<ProductPage> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      barrierColor: Colors.transparent,
-                      builder: (context) => const AddEditProductPage(),
-                    );
-                    _refreshProducts();
+                    // Pass the _refreshProducts callback to AddEditProductPage
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddEditProductPage(
+                          refreshProducts:
+                              _refreshProducts, // Pass the callback here
+                        ),
+                      ),
+                    ).then((_) {
+                      _refreshProducts(); // Panggil _refreshProducts setelah halaman AddEditProductPage ditutup
+                    });
+// Refresh products after returning from Add/Edit page
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E1E1E),

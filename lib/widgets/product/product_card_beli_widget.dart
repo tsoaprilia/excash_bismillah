@@ -29,14 +29,18 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
   }
 
   void _increaseQuantity() {
-    setState(() {
-      quantity++;
-      widget.updateTotalAmount(1);
-    });
+    if (quantity < widget.product.stock || widget.product.stock == 0) {
+      // Increase quantity if stock > 0 or product is out of stock but still able to increase
+      setState(() {
+        quantity++;
+        widget.updateTotalAmount(1);
+      });
+    }
   }
 
   void _decreaseQuantity() {
     if (quantity > 0) {
+      // Decrease quantity only if quantity > 0
       setState(() {
         quantity--;
         widget.updateTotalAmount(-1);
@@ -46,15 +50,18 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
 
   @override
   Widget build(BuildContext context) {
+    bool isOutOfStock = widget.product.stock == 0;
+    bool isMaxStock = quantity >= widget.product.stock;
+
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
-      color: Colors.white,
+      color: isOutOfStock ? Colors.grey[300] : Colors.white, // Ubah warna jika habis stok
       elevation: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isOutOfStock ? Colors.grey[300] : Colors.white, // Ubah warna jika habis stok
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
@@ -96,6 +103,7 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
               // Bagian kanan: Quantity Selector
               Row(
                 children: [
+                  // Tombol Decrease
                   Container(
                     width: 24,
                     height: 24,
@@ -104,7 +112,7 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: IconButton(
-                      onPressed: _decreaseQuantity,
+                      onPressed: isOutOfStock ? null : _decreaseQuantity, // Disable jika out of stock
                       icon: const Icon(Icons.remove, size: 16),
                       color: Colors.black,
                       padding: EdgeInsets.zero,
@@ -112,6 +120,7 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
                     ),
                   ),
                   const SizedBox(width: 4),
+                  // Menampilkan quantity
                   Text(
                     quantity.toString(),
                     style: const TextStyle(
@@ -120,20 +129,20 @@ class _ProductCardBeliWidgetState extends State<ProductCardBeliWidget> {
                     ),
                   ),
                   const SizedBox(width: 4),
+                  // Tombol Increase
                   Container(
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E1E),
+                      color: isMaxStock ? Colors.grey : const Color(0xFF1E1E1E),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: IconButton(
-                      onPressed: _increaseQuantity,
+                      onPressed: isMaxStock ? null : _increaseQuantity, // Disable jika stok penuh
                       icon: const Icon(Icons.add, size: 16),
-                      color: Colors.white,
+                      color: isMaxStock ? Colors.grey : Colors.white,
                       padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints(), // Hilangkan margin bawaan IconButton
+                      constraints: const BoxConstraints(),
                     ),
                   ),
                 ],

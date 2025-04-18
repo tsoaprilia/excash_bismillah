@@ -36,12 +36,22 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> cart = [];
 
   @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-    _refreshProducts();
-  }
-
+void initState() {
+  super.initState();
+  _loadUserData();
+  _refreshProducts();
+  
+  // Tambahkan focus listener untuk menyegarkan data ketika halaman mendapat fokus kembali
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final focusNode = FocusNode();
+    FocusScope.of(context).requestFocus(focusNode);
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        _refreshProducts(); 
+      }
+    });
+  });
+}
   void _clearCart() {
     setState(() {
       cart.clear(); // Mengosongkan keranjang belanja
@@ -167,6 +177,8 @@ class _HomePageState extends State<HomePage> {
     await prefs.setString('user_email', userEmail);
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     final filteredProducts = _getFilteredProducts();
@@ -250,11 +262,11 @@ class _HomePageState extends State<HomePage> {
                             cart.clear(); // Reset cart
                             totalAmount = 0; // Reset total amount
                           });
+                          _refreshProducts(); 
                         },
                       ),
                     ),
-                  );
-                  _refreshProducts();
+                  ).then((_) => _refreshProducts()); 
                 },
               ),
             ),

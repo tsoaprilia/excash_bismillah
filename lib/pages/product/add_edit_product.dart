@@ -9,8 +9,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AddEditProductPage extends StatefulWidget {
   final Product? product;
+  final Future<void> Function() refreshProducts; // Add this callback
 
-  const AddEditProductPage({super.key, this.product});
+  const AddEditProductPage(
+      {super.key, this.product, required this.refreshProducts});
 
   @override
   _AddEditProductPageState createState() => _AddEditProductPageState();
@@ -42,16 +44,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _selectedCategory = widget.product?.id_category != null
         ? widget.product!.id_category.toString()
         : null;
-  
   }
 
-
-Future<String?> _getUserId() async {
-  final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getString('user_id'); // Mengambil ID pengguna yang login
-  print('User ID: $userId');  // Debugging
-  return userId;
-}
+  Future<String?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId =
+        prefs.getString('user_id'); // Mengambil ID pengguna yang login
+    print('User ID: $userId'); // Debugging
+    return userId;
+  }
 
   Future<void> _scanBarcode() async {
     try {
@@ -76,44 +77,44 @@ Future<String?> _getUserId() async {
     }
   }
 
-  
   Future<void> _saveProduct() async {
-  if (_formKey.currentState!.validate()) {
-    final userId = await _getUserId(); // Ambil userId
+    if (_formKey.currentState!.validate()) {
+      final userId = await _getUserId(); // Ambil userId
 
-    if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("User belum login")),
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("User belum login")),
+        );
+        return;
+      }
+
+      final newProduct = Product(
+        id_product: _idProduct.isNotEmpty
+            ? _idProduct
+            : DateTime.now().millisecondsSinceEpoch.toString(),
+        id_category: _selectedCategory != null
+            ? int.tryParse(_selectedCategory!) ?? 0
+            : 0,
+        name_product: _name,
+        price: _price.isNotEmpty ? int.parse(_price) : 0,
+        selling_price: _sellingPrice.isNotEmpty ? int.parse(_sellingPrice) : 0,
+        stock: _stock.isNotEmpty ? int.parse(_stock) : 0,
+        description: _description,
+        created_at: DateTime.now(),
+        updated_at: DateTime.now(),
+        id: userId!, // Assign userId yang didapat dari SharedPreferences
       );
-      return;
+
+      if (_isUpdateForm) {
+        await ExcashDatabase.instance.updateProduct(newProduct);
+      } else {
+        await ExcashDatabase.instance.createProduct(newProduct);
+      }
+      await widget.refreshProducts();
+
+      Navigator.pop(context); // Tutup halaman setelah menyimpan
     }
-
-    final newProduct = Product(
-      id_product: _idProduct.isNotEmpty
-          ? _idProduct
-          : DateTime.now().millisecondsSinceEpoch.toString(),
-      id_category: _selectedCategory != null
-          ? int.tryParse(_selectedCategory!) ?? 0
-          : 0,
-      name_product: _name,
-      price: _price.isNotEmpty ? int.parse(_price) : 0,
-      selling_price: _sellingPrice.isNotEmpty ? int.parse(_sellingPrice) : 0,
-      stock: _stock.isNotEmpty ? int.parse(_stock) : 0,
-      description: _description,
-      created_at: DateTime.now(),
-      updated_at: DateTime.now(),
-      id: userId!, // Assign userId yang didapat dari SharedPreferences
-    );
-
-    if (_isUpdateForm) {
-      await ExcashDatabase.instance.updateProduct(newProduct);
-    } else {
-      await ExcashDatabase.instance.createProduct(newProduct);
-    }
-
-    Navigator.pop(context); // Tutup halaman setelah menyimpan
   }
-}
 
   @override
   Widget build(BuildContext context) {

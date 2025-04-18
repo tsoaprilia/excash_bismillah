@@ -120,13 +120,6 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
         product.id_product, // id_product tetap sebagai String
         updatedStock,
       );
-
-      // Update stok setelah berhasil menambahkan ke detail order
-      // int updatedStock = (product.stock - quantity).toInt();
-      // await ExcashDatabase.instance.updateProductStock(
-      //   int.tryParse(product.id_product!) ?? 0,
-      //   updatedStock,
-      // );
     }
 
     // Panggil callback setelah transaksi berhasil
@@ -138,7 +131,8 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
     );
     Navigator.pop(context);
 
-    Navigator.push(
+    // Gunakan Navigator.pushReplacement untuk menggantikan halaman transaksi dengan halaman baru
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => TransactionDetailPage(orderId: orderId),
@@ -289,7 +283,8 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                                   ),
                                   Expanded(
                                     flex: 2,
-                                    child: Text('${item['quantity']} x Rp ${product.price}',
+                                    child: Text(
+                                        '${item['quantity']} x Rp ${product.price}',
                                         textAlign: TextAlign.center),
                                   ),
                                   Expanded(

@@ -61,11 +61,18 @@ class _TransactionPageState extends State<TransactionPage> {
     _isLoading = false;
   });
 }
+// Di halaman Transaksi
+void refreshTransaction() async {
+  setState(() async {
+    _transactions = (await ExcashDatabase.instance.getAllTransactions()).cast<TransactionData>(); // Muat ulang data transaksi
+  });
+}
 
 
   @override
   void initState() {
     super.initState();
+    refreshTransaction();
     _fetchTransactions();
     _getFullName();
   }
