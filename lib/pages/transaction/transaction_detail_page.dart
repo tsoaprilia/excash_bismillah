@@ -1,4 +1,5 @@
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:excash/general_pages/menu.dart';
 import 'package:excash/models/order_detail.dart';
 import 'package:excash/models/product.dart';
 import 'package:excash/models/user.dart';
@@ -50,58 +51,184 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
 
   /// Fungsi cetak struk
   void _printReceipt(Order orderData, User userData,
-      List<Map<String, dynamic>> orderDetailsData) async {
+      List<Map<String, dynamic>> orderDetailsData, BuildContext context) async {
     if ((await printer.isConnected)!) {
-      printer.printNewLine();
+      try {
+        printer.printNewLine();
+        printer.printCustom('TOKO ${userData.businessName}', 1, 1);
+        printer.printCustom('oleh excash', 1, 1);
 
-      // Header toko
-      printer.printCustom('TOKO ${userData.businessName}', 1, 1);
-      printer.printCustom('oleh excash', 1, 1);
+        printer.printNewLine();
+        printer.printCustom(
+            'Waktu: ${formatTanggal(orderData.created_at)}', 1, 1);
+        printer.printCustom('Kasir: ${userData.fullName}', 1, 1);
 
-      printer.printNewLine();
+        printer.printCustom('--------------------------------', 1, 1);
+        printer.printNewLine();
+        printer.printCustom('Detail', 1, 1);
+        printer.printCustom('--------------------------------', 1, 1);
 
-      // Informasi Kasir & Transaksi
-      printer.printCustom(
-          'Waktu: ${formatTanggal(orderData.created_at)}', 1, 1);
-      printer.printCustom('Kasir: ${userData.fullName}', 1, 1);
-
-      printer.printCustom('--------------------------------', 1, 1);
-      printer.printNewLine();
-      // Detail Transaksi
-      printer.printCustom('Detail', 1, 1);
-      printer.printCustom('--------------------------------', 1, 1);
-
-      // Print order details with unit price
-      for (var detail in orderDetailsData) {
-        // Printing product name, quantity, unit price, and subtotal
-        printer.printLeftRight(
+        for (var detail in orderDetailsData) {
+          printer.printLeftRight(
             '${detail['nama_produk']}',
             '${detail['quantity']}x${detail['harga_satuan'].toInt()} ${detail['subtotal'].toInt()}',
-            1);
+            1,
+          );
+        }
+
+        printer.printCustom('--------------------------------', 1, 1);
+        printer.printLeftRight('Total', 'Rp ${orderData.total_price}', 1);
+        printer.printCustom('--------------------------------', 1, 1);
+
+        printer.printNewLine();
+        printer.printLeftRight('Uang Diterima', 'Rp ${orderData.payment}', 1);
+        printer.printLeftRight('Kembalian', 'Rp ${orderData.change}', 1);
+        printer.printCustom('--------------------------------', 1, 1);
+
+        printer.printNewLine();
+        printer.printNewLine();
+        printer.printCustom('TERIMA KASIH!', 2, 1);
+        printer.printCustom('Simpan struk ini', 1, 1);
+        printer.printCustom('sebagai bukti pembayaran', 1, 1);
+        printer.printNewLine();
+        printer.printNewLine();
+        printer.printNewLine();
+        printer.paperCut();
+
+        // TAMPILKAN ALERT BERHASIL
+        showPrintDialog(
+          context,
+          isSuccess: true,
+          title: 'Struk Berhasil Diprint',
+          message: 'Struk transaksi berhasil dicetak!',
+        );
+      } catch (e) {
+        // TAMPILKAN ALERT GAGAL
+        showPrintDialog(
+          context,
+          isSuccess: false,
+          title: 'Struk Gagal Diprint',
+          message: 'Terjadi masalah saat mencetak struk: ${e.toString()}',
+        );
       }
-
-      printer.printCustom('--------------------------------', 1, 1);
-      // Total Harga
-      printer.printLeftRight('Total', 'Rp ${orderData.total_price}', 1);
-      printer.printCustom('--------------------------------', 1, 1);
-
-      // Total dan Pembayaran
-      printer.printNewLine();
-      printer.printLeftRight('Uang Diterima', 'Rp ${orderData.payment}', 1);
-      printer.printLeftRight('Kembalian', 'Rp ${orderData.change}', 1);
-      printer.printCustom('--------------------------------', 1, 1);
-
-      printer.printNewLine();
-      printer.printNewLine();
-      // Pesan Akhir
-      printer.printCustom('TERIMA KASIH!', 2, 1);
-      printer.printCustom('Simpan struk ini', 1, 1);
-      printer.printCustom('sebagai bukti pembayaran', 1, 1);
-      printer.printNewLine();
-      printer.printNewLine();
-      printer.printNewLine();
-      printer.paperCut();
+    } else {
+      // TAMPILKAN ALERT PRINTER BELUM TERHUBUNG
+      showPrintDialog(
+        context,
+        isSuccess: false,
+        title: 'Printer Belum Terkoneksi',
+        message: 'Silakan sambungkan printer, pada menu "Print" di profile!',
+      );
     }
+  }
+
+  void showPrintDialog(BuildContext context,
+      {required bool isSuccess,
+      required String title,
+      required String message}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            padding: const EdgeInsets.only(
+                left: 16.0, right: 16.0, top: 16.0, bottom: 24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(Icons.print_outlined,
+                        color: const Color(0xFF424242), size: 24),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Color(0xFF424242),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      isSuccess
+                          ? 'assets/img/sukses.png'
+                          : 'assets/img/gagal.png',
+                      width: 60,
+                      height: 60,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Color(0xFF424242),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            message,
+                            textAlign: TextAlign.left,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w400,
+                              fontSize: 12,
+                              color: Color(0xFF757B7B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -133,7 +260,14 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 icon: const Icon(Icons.arrow_back_ios_new,
                     size: 20, color: Colors.black),
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainScreen(
+                          initialIndex: 3), // langsung ke TransactionPage
+                    ),
+                    (Route<dynamic> route) => false,
+                  );
                 },
               ),
             ),
@@ -229,8 +363,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () => _printReceipt(
-                                  orderData, userData, orderDetailsData),
+                              onPressed: () => _printReceipt(orderData,
+                                  userData, orderDetailsData, context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1E1E1E),
                                 foregroundColor: Colors.white,

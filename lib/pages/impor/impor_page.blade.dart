@@ -18,7 +18,7 @@ class _ImporPageState extends State<ImporPage> {
   File? orderFile;
   File? orderDetailFile;
 
-Future<void> pickFile(String fileType) async {
+  Future<void> pickFile(String fileType) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
@@ -40,6 +40,7 @@ Future<void> pickFile(String fileType) async {
       });
     }
   }
+
   // Refresh methods
   Future<void> _refreshUsers() async {
     await printAllUsers();
@@ -63,31 +64,32 @@ Future<void> pickFile(String fileType) async {
 
   Future<void> importData() async {
     final importData = ImportData();
+    print("User File Path: ${userFile?.path}");
 
     if (userFile != null) {
       await importData.importFromCSV(userFile!, 'users');
       await printAllUsers();
-      _refreshUsers();  // Refresh after importing user data
+      _refreshUsers(); // Refresh after importing user data
     }
     if (categoryFile != null) {
       await importData.importFromCSV(categoryFile!, 'category');
       await printCategoryData();
-      _refreshCategory();  // Refresh after importing category data
+      _refreshCategory(); // Refresh after importing category data
     }
     if (productFile != null) {
       await importData.importFromCSV(productFile!, 'product');
       await printProductData();
-      _refreshProducts();  // Refresh after importing product data
+      _refreshProducts(); // Refresh after importing product data
     }
     if (orderFile != null) {
       await importData.importFromCSV(orderFile!, 'orders');
       await printOrderData(); // Debugging log
-      _refreshOrders();  // Refresh after importing order data
+      _refreshOrders(); // Refresh after importing order data
     }
     if (orderDetailFile != null) {
       await importData.importFromCSV(orderDetailFile!, 'order_detail');
       await printOrderDetailData(); // Debugging log
-      _refreshOrderDetails();  // Refresh after importing order details data
+      _refreshOrderDetails(); // Refresh after importing order details data
     }
 
     // Show success message after import

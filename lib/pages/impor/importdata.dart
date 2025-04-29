@@ -11,10 +11,12 @@ import 'package:sqflite/sqflite.dart';
 
 class ImportData {
   Future<void> importFromCSV(File file, String type) async {
+    print("start of import csv $type ${file.path}");
     Database db = await ExcashDatabase.instance.database;
     String fileContent = await file.readAsString();
     List<List<dynamic>> csvTable =
         const CsvToListConverter().convert(fileContent);
+    print("Check CSV Table: ${csvTable.length}");
 
     if (csvTable.isEmpty) {
       print("File CSV kosong!");
@@ -24,32 +26,40 @@ class ImportData {
     String? currentTable = type;
     List<String>? columns;
 
+    var i = 0;
     for (var row in csvTable) {
+      print('Row length: ${row.length}');
       if (row.isEmpty) continue;
+      print('Row first: ${row.first}');
 
       // Mengambil nama kolom dari baris pertama CSV
-      if (row.first is String && row.length > 1) {
+      if (i == 0) {
         columns = row.sublist(1).cast<String>(); // Ambil nama kolom
+        print('Checkpoint 1: $columns');
       } else if (columns != null) {
+        print('Columns not null $columns');
         Map<String, dynamic> data = {};
         for (int i = 0; i < columns.length; i++) {
           data[columns[i]] = row[i] ?? '';
+          print('column $i: ${data[columns[i]]}');
         }
+        print('current table: $currentTable');
 
         if (currentTable == 'users') {
-          // Gantilah 'user' menjadi 'users' dan gunakan INSERT OR IGNORE agar data tidak diganti jika sudah ada email yang sama
-          data[UserFields.id] =
-              row[0] ?? Uuid().v4(); // Generate UUID jika tidak ada
-          data[UserFields.email] = row[1];
-          data[UserFields.fullName] = row[2];
-          data[UserFields.businessName] = row[3];
-          data[UserFields.password] = row[4];
-          data[UserFields.image] = row[5] ?? 'N/A';
+          if (row.length >= 6) {
+            data[UserFields.id] = row[0]; // Generate UUID jika tidak ada
+            data[UserFields.email] = row[1];
+            data[UserFields.fullName] = row[2];
+            data[UserFields.businessName] = row[3];
+            data[UserFields.password] = row[4];
+            data[UserFields.image] = row[5] ?? 'N/A';
 
-          print('Inserting user: $data'); // Debugging log
-          await db.insert(currentTable!, data,
-              conflictAlgorithm: ConflictAlgorithm
-                  .ignore); // Menggunakan ignore agar tidak mengganti data yang sudah ada
+            // Menambahkan data ke tabel 'users', jika email sudah ada, maka data baru akan diabaikan
+            print('Inserting user data: $data'); // Debugging log
+            await db.insert(currentTable!, data,
+                conflictAlgorithm: ConflictAlgorithm
+                    .replace); // Ini akan menggantikan data lama jika email sudah ada
+          }
         }
 
         // Untuk Category
@@ -116,6 +126,7 @@ class ImportData {
           }
         }
       }
+      i++;
     }
 
     print("Data berhasil diimpor dari CSV!");

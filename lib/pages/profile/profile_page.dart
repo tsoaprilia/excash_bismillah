@@ -218,63 +218,164 @@ class _ProfilePageState extends State<ProfilePage> {
                       bool confirmLogout = await showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              dialogBackgroundColor:
-                                  Colors.white, // Pastikan background putih
+                          return Dialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                            child: AlertDialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(10), // Radius 10
+                            backgroundColor: Colors.white, // Ensure it's white
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white, // Ensure it's white
+                                borderRadius: BorderRadius.circular(15),
                               ),
-                              title: const Text(
-                                "Konfirmasi Logout",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Color(0xFF424242),
-                                ),
-                              ),
-                              content: const Text(
-                                "Apakah Anda yakin ingin logout?",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14,
-                                  color: Color(
-                                      0xFF757B7B), // Warna teks lebih soft
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context)
-                                        .pop(true); // Tidak logout
-                                  },
-                                  child: const Text(
-                                    "Ya",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: Color(0xFF424242),
-                                    ),
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Header
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Icon(
+                                        Icons.event_note_outlined,
+                                        color: const Color(
+                                            0xFF424242), // Text color
+                                        size: 24,
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          "Konfirmasi Logout",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                            color: Color(0xFF424242),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      // Close button with shadow
+                                      Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black
+                                                  .withOpacity(0.05),
+                                              blurRadius: 5,
+                                              spreadRadius: 1,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: IconButton(
+                                          icon:
+                                              const Icon(Icons.close, size: 18),
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context)
-                                        .pop(false); // Ya, lanjut logout
-                                  },
-                                  child: const Text(
-                                    "Tidak",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: Color(0xFFD39054),
-                                    ),
+                                  const SizedBox(height: 16),
+
+                                  // Image (status or any other image you want to add)
+                                  Image.asset(
+                                    'assets/img/confirm.png', // Replace with your image path
+                                    width: 60,
+                                    height: 60,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 16),
+
+                                  // Message
+                                  Text(
+                                    "Apakah Anda yakin ingin logout?",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 14,
+                                      color:
+                                          Color(0xFF757B7B), // Soft text color
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pop(true); // Not logout
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            primary: Colors
+                                                .white, // Background color of the button
+                                            onPrimary:
+                                                Color(0xFF424242), // Text color
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 12,
+                                                horizontal:
+                                                    24), // Adjust padding
+                                            side: BorderSide(
+                                                color: Color(
+                                                    0xFF424242)), // Border color
+                                          ),
+                                          child: const Text(
+                                            "Ya",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                          width:
+                                              8), // Optional: Add space between the buttons
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop(
+                                                false); // Proceed with logout
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            primary: Colors
+                                                .white, // Background color of the button
+                                            onPrimary:
+                                                Color(0xFFD39054), // Text color
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 12,
+                                                horizontal:
+                                                    24), // Adjust padding
+                                            side: BorderSide(
+                                                color: Color(
+                                                    0xFFD39054)), // Border color
+                                          ),
+                                          child: const Text(
+                                            "Tidak",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                ],
+                              ),
                             ),
                           );
                         },

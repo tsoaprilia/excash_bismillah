@@ -87,6 +87,7 @@ Future<void> loginUser() async {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      backgroundColor: Colors.white, 
       body: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -157,7 +158,7 @@ Future<void> loginUser() async {
                     GestureDetector(
                       onTap: () {},
                       child: const Text(
-                        "Lupa Kata Kunci?",
+                        " ",
                         style: TextStyle(
                           color: Color(0xFFD39054),
                           fontWeight: FontWeight.w500,

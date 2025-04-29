@@ -117,6 +117,48 @@ class ExcashDatabase {
     // Ini akan menampilkan semua tabel yang ada di database
   }
 
+
+  Future<void> getDatabaseSize() async {
+    // Mendapatkan path database
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'excash.db');
+
+    // Mendapatkan ukuran file database
+    final file = File(path);
+    final fileLength = await file.length(); // Ukuran dalam bytes
+
+    // Mengkonversi ukuran ke KB atau MB
+    final fileSizeInKB = fileLength / 1024; // Dalam KB
+    final fileSizeInMB = fileSizeInKB / 1024; // Dalam MB
+
+    // Menghitung jumlah data pada setiap tabel
+    final db = await instance.database;
+
+    // Menghitung jumlah data pada tabel users
+    final usersCount = await db.rawQuery('SELECT COUNT(*) FROM users');
+    final userCount = Sqflite.firstIntValue(usersCount)!;
+
+    // Menghitung jumlah data pada tabel categories
+    final categoriesCount = await db.rawQuery('SELECT COUNT(*) FROM category');
+    final categoryCount = Sqflite.firstIntValue(categoriesCount)!;
+
+    // Menghitung jumlah data pada tabel products
+    final productsCount = await db.rawQuery('SELECT COUNT(*) FROM product');
+    final productCount = Sqflite.firstIntValue(productsCount)!;
+
+    // Menghitung jumlah data pada tabel orders
+    final ordersCount = await db.rawQuery('SELECT COUNT(*) FROM orders');
+    final orderCount = Sqflite.firstIntValue(ordersCount)!;
+
+    // Mencetak ukuran file database dan jumlah data
+    print('Ukuran Database: ${fileSizeInMB.toStringAsFixed(2)} MB');
+    print('Jumlah Data:');
+    print('Users: $userCount data');
+    print('Categories: $categoryCount data');
+    print('Products: $productCount data');
+    print('Orders: $orderCount data');
+  }
+
   //CATEGORY
   Future<Category> create(Category category) async {
     final db = await instance.database;
@@ -360,6 +402,10 @@ class ExcashDatabase {
 
     if (result.isNotEmpty) {
       print("User berhasil login: ${result.first}");
+
+      // Memanggil untuk cek ukuran database setelah login berhasil
+      await ExcashDatabase.instance.getDatabaseSize();
+
       return User.fromJson(result.first);
     } else {
       print("Login gagal: tidak ada user yang cocok.");

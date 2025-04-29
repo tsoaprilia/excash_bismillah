@@ -47,7 +47,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
   int getTotalPrice() {
     return widget.cart.fold(0, (sum, item) {
       final product = item['product'] as Product;
-      return sum + (product.price * (item['quantity'] as int)).toInt();
+      return sum + (product.selling_price * (item['quantity'] as int)).toInt();
     });
   }
 
@@ -284,13 +284,13 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                        '${item['quantity']} x Rp ${product.price}',
+                                        '${item['quantity']} x Rp ${product.selling_price}',
                                         textAlign: TextAlign.center),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                      'Rp ${(product.price * item['quantity']).toInt()}',
+                                      'Rp ${(product.selling_price * item['quantity']).toInt()}',
                                       textAlign: TextAlign.right,
                                     ),
                                   ),

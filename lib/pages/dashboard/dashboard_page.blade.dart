@@ -38,25 +38,46 @@ class _DashboardPageState extends State<DashboardPage> {
   List<Map<String, dynamic>> topProducts = [];
   List<FlSpot> salesData = [];
   Database? _database;
-  List<String> dateList = [];
   late Database db;
+
+  String selectedYear = DateTime.now().year.toString();
+  final List<String> years = ["2025", "2026", "2027"];
 
   @override
   void initState() {
     super.initState();
 
     int currentMonth = DateTime.now().month;
-    selectedMonthFilter = months[currentMonth - 1];
+    selectedMonthFilter =
+        months[currentMonth - 1]; // Initialize with the current month
 
-    _initDatabase();
-    _fetchData();
-    _fetchTopProducts();
+    // Ensure selectedMonthFilter is valid (not out of range)
+    if (months.indexOf(selectedMonthFilter) < 0) {
+      selectedMonthFilter = months[0]; // Default to "Januari" if invalid
+    }
+
+    // Automatically fetch the data when the page loads
+    _initDatabase(); // Initialize database and fetch data
+    _fetchSalesData(); // Automatically fetch sales data
+    _fetchData(); // Automatically fetch income data
+    _fetchTopProducts(); // Automatically fetch top products
   }
 
   Future<void> _initDatabase() async {
-    db = await openDatabase(
-        'excash.db'); // Gantilah dengan path database yang benar
-    _fetchSalesData(); // Panggil setelah database siap
+    db = await openDatabase('excash.db');
+    _fetchSalesData(); // Fetch sales data after the database is ready
+    _fetchData(); // Fetch other necessary data after DB initialization
+  }
+
+  String formatRupiah(dynamic amount) {
+    if (amount == null) return "0";
+    try {
+      final number = int.parse(amount.toString());
+      final formatted = NumberFormat('#,##0', 'id_ID').format(number);
+      return formatted;
+    } catch (e) {
+      return "0"; // Kalau gagal parsing, balikkan 0
+    }
   }
 
   Future<void> _fetchTopProducts() async {
@@ -65,53 +86,87 @@ class _DashboardPageState extends State<DashboardPage> {
     String monthNumber =
         (months.indexOf(selectedMonthFilter) + 1).toString().padLeft(2, '0');
 
-    final List<Map<String, dynamic>> result = await db.rawQuery('''
+    final List<Map<String, dynamic>> result = await db.rawQuery(''' 
     SELECT p.${ProductFields.name_product} AS name_product, 
            COALESCE(SUM(d.${OrderDetailFields.quantity}), 0) AS total_terjual
     FROM $tableOrderDetail d
     JOIN $tableProduct p ON d.${OrderDetailFields.id_product} = p.${ProductFields.id_product}
     JOIN $tableOrders o ON d.${OrderDetailFields.id_order} = o.${OrderFields.id_order}  
     WHERE o.${OrderFields.total_price} > 0  
-    AND strftime('%m', o.${OrderFields.created_at}) = ?  -- Filter by month using created_at
+    AND strftime('%Y', o.${OrderFields.created_at}) = ?  
+    AND strftime('%m', o.${OrderFields.created_at}) = ?  
     GROUP BY p.${ProductFields.name_product}
     ORDER BY total_terjual DESC
-  ''', [monthNumber]);
+  ''', [selectedYear, monthNumber]);
 
     setState(() {
       topProducts = result;
     });
   }
 
-  Future<Database> _getDatabase() async {
-    if (_database != null) return _database!;
-    _database = await openDatabase(join(await getDatabasesPath(), 'excash.db'));
-    return _database!;
+  Future<void> _fetchSalesData() async {
+    final database = await ExcashDatabase.instance.database;
+
+    List<FlSpot> tempSalesData = [];
+    List<String> monthsOfYear = [
+      '01',
+      '02',
+      '03',
+      '04',
+      '05',
+      '06',
+      '07',
+      '08',
+      '09',
+      '10',
+      '11',
+      '12'
+    ];
+
+    for (int i = 0; i < 12; i++) {
+      String currentMonth = monthsOfYear[i];
+
+      var sales = await database.rawQuery(''' 
+      SELECT COALESCE(SUM(total_price), 0) AS total 
+      FROM $tableOrders 
+      WHERE strftime('%Y', created_at) = ? 
+      AND strftime('%m', created_at) = ?
+    ''', [selectedYear, currentMonth]);
+
+      double totalSales = sales.isNotEmpty && sales[0]['total'] != null
+          ? (sales[0]['total'] as num).toDouble()
+          : 0.0;
+
+      tempSalesData.add(FlSpot((i + 1).toDouble(), totalSales));
+    }
+
+    setState(() {
+      salesData = tempSalesData;
+    });
   }
 
   Future<void> _fetchData() async {
     final db = await ExcashDatabase.instance.database;
 
-    // Tentukan tanggal hari ini dan tanggal pertama bulan ini dalam format 'YYYY-MM-DD'
     String today = DateTime.now().toIso8601String().split('T')[0];
-    String firstDayOfMonth =
-        DateTime(DateTime.now().year, DateTime.now().month, 1)
-            .toIso8601String()
-            .split('T')[0];
 
-    // Convert selected month to its corresponding number (e.g., Januari -> 01)
+    // Convert month name to month number
     String monthNumber =
         (months.indexOf(selectedMonthFilter) + 1).toString().padLeft(2, '0');
 
     await db.transaction((txn) async {
+      // Fetch today's income data
       var todayIncome = await txn.rawQuery(
-          "SELECT SUM(total_price) as income, COUNT(id_order) as transactions FROM orders WHERE date(created_at) = ?",
-          [today]);
+        "SELECT SUM(total_price) as income, COUNT(id_order) as transactions FROM orders WHERE date(created_at) = ? AND strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?",
+        [today, selectedYear, monthNumber],
+      );
 
+      // Fetch monthly income data
       var monthIncome = await txn.rawQuery(
-          "SELECT SUM(total_price) as income, COUNT(id_order) as transactions FROM orders WHERE strftime('%m', created_at) = ?",
-          [monthNumber]); // Filter by selected month
+        "SELECT SUM(total_price) as income, COUNT(id_order) as transactions FROM orders WHERE strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?",
+        [selectedYear, monthNumber],
+      );
 
-      // Pastikan hasil query tidak null sebelum diakses
       num todayIncomeValue =
           (todayIncome.isNotEmpty && todayIncome[0]['income'] != null)
               ? todayIncome[0]['income'] as num
@@ -144,57 +199,6 @@ class _DashboardPageState extends State<DashboardPage> {
           }
         };
       });
-    });
-  }
-
-  Future<void> _fetchSalesData() async {
-    if (db == null) return; // Pastikan db tidak null
-
-    String dateFilter = "-1 month";
-    if (selectedFilter == "3 Bulan") {
-      dateFilter = "-3 month";
-    } else if (selectedFilter == "1 Tahun") {
-      dateFilter = "-1 year";
-    }
-
-    var sales = await db.rawQuery('''
-    SELECT strftime('%d', created_at) AS day, 
-           COALESCE(SUM(total_price), 0) AS total 
-    FROM $tableOrders 
-    WHERE date(created_at) >= date('now', ?)
-    GROUP BY day
-    ORDER BY day ASC
-  ''', [dateFilter]);
-
-    DateTime now = DateTime.now();
-    int daysInRange = selectedFilter == "1 Tahun"
-        ? 365
-        : (selectedFilter == "3 Bulan" ? 90 : 30);
-
-    List<FlSpot> tempSalesData = [];
-
-    for (int i = 0; i < daysInRange; i++) {
-      String day = (now.subtract(Duration(days: daysInRange - i)).day)
-          .toString()
-          .padLeft(2, '0');
-
-      var matchingData = sales.firstWhere(
-        (e) => e['day'] == day,
-        orElse: () => {'day': day, 'total': 0},
-      );
-
-      tempSalesData.add(FlSpot(
-        double.parse(matchingData['day'].toString()),
-        double.parse(matchingData['total'].toString()),
-      ));
-    }
-
-    if (tempSalesData.isEmpty) {
-      tempSalesData.add(FlSpot(0, 0));
-    }
-
-    setState(() {
-      salesData = tempSalesData;
     });
   }
 
@@ -252,6 +256,8 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildYearFilter(), // Tambahkan filter tahun di sini
+              const SizedBox(height: 10),
               _buildStatsCards(),
               const SizedBox(height: 20),
               _buildSalesPerformance(),
@@ -260,6 +266,93 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildYearFilter() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7A257).withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF0AE75).withOpacity(0.1),
+            blurRadius: 6,
+            spreadRadius: 2,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            "Pilih",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF424242),
+            ),
+          ),
+          _buildDropdown(
+            value: selectedYear,
+            items: years,
+            onChanged: (newYear) {
+              setState(() {
+                selectedYear = newYear!;
+              });
+              _fetchData();
+              _fetchSalesData();
+              _fetchTopProducts();
+            },
+          ),
+          _buildDropdown(
+            value: selectedMonthFilter,
+            items: months,
+            onChanged: (newMonth) {
+              setState(() {
+                selectedMonthFilter = newMonth!;
+              });
+              _fetchTopProducts();
+              _fetchData();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            spreadRadius: 1,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: DropdownButton<String>(
+        value: value,
+        onChanged: onChanged,
+        underline: SizedBox(), // Ini tetap dipakai agar tidak ada underline
+        items: items.map<DropdownMenuItem<String>>((String val) {
+          return DropdownMenuItem<String>(
+            value: val,
+            child: Text(val),
+          );
+        }).toList(),
       ),
     );
   }
@@ -275,42 +368,48 @@ class _DashboardPageState extends State<DashboardPage> {
               "Penghasilan",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            DropdownButton<String>(
-              value: selectedMonthFilter,
-              onChanged: (newMonthValue) {
-                setState(() {
-                  selectedMonthFilter = newMonthValue!;
-                });
-                _fetchData(); // Update products when month changes
-              },
-              items: months.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
+            // DropdownButton<String>(
+            //   value: selectedMonthFilter,
+            //   onChanged: (newMonthValue) {
+            //     setState(() {
+            //       selectedMonthFilter = newMonthValue!;
+            //     });
+            //     _fetchData(); // Update products when month changes
+            //   },
+            //   items: months.map<DropdownMenuItem<String>>((String value) {
+            //     return DropdownMenuItem<String>(
+            //       value: value,
+            //       child: Text(value),
+            //     );
+            //   }).toList(),
+            // ),
           ],
         ),
-
-        // Row for both "Hari Ini" and "Bulan Ini" cards side by side
+        const SizedBox(height: 16),
         Row(
-          mainAxisAlignment:
-              MainAxisAlignment.start, // Align cards to the start
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Expanded(
               child: _bigStatCard(
                 "Hari Ini",
-                incomeData?['hari_ini']?['income'] ?? "0",
-                "${incomeData?['hari_ini']?['transactions'] ?? "0"} transaksi",
+                incomeData != null && incomeData['hari_ini'] != null
+                    ? formatRupiah(incomeData['hari_ini']['income']) ??
+                        "0" // Default to "0" if null
+                    : "0", // Default to "0" if 'hari_ini' is null
+                "${incomeData != null && incomeData['hari_ini'] != null ? incomeData['hari_ini']['transactions'] ?? 0 // Default to 0 if null
+                    : 0} transaksi", // Default to 0 if 'transactions' is null
               ),
             ),
             const SizedBox(width: 10), // Space between the two cards
             Expanded(
               child: _bigStatCard(
                 "Bulan Ini",
-                incomeData!['bulan_ini']['income'],
-                "${incomeData!['bulan_ini']['transactions']} transaksi ",
+                incomeData != null && incomeData['bulan_ini'] != null
+                    ? formatRupiah(incomeData['bulan_ini']['income']) ??
+                        "0" // Default to "0" if null
+                    : "0", // Default to "0" if 'bulan_ini' is null
+                "${incomeData != null && incomeData['bulan_ini'] != null ? incomeData['bulan_ini']['transactions'] ?? 0 // Default to 0 if null
+                    : 0} transaksi", // Default to 0 if 'transactions' is null
               ),
             ),
           ],
@@ -349,14 +448,16 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            value,
+            value != null ? value : "0", // Null check for value
             style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFD39054)),
           ),
           Text(
-            desc,
+            desc != null
+                ? desc
+                : "No description", // Null check for description
             style: const TextStyle(fontSize: 12, color: Color(0xFF181717)),
           ),
         ],
@@ -365,111 +466,89 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildSalesPerformance() {
-    DateTime now = DateTime.now(); // Definisi ulang di sini
-    int daysInRange = selectedFilter == "1 Tahun"
-        ? 365
-        : (selectedFilter == "3 Bulan" ? 90 : 30);
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 0.0),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
+            children: const [
+              Text(
                 "Performa Penjualan",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              DropdownButton<String>(
-                value: selectedFilter,
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedFilter = newValue!;
-                  });
-                  _fetchSalesData(); // Tidak perlu parameter db jika variabelnya global
-                },
-                items: filters.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: true, drawVerticalLine: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (double value, TitleMeta meta) {
-                        return Text(
-                          "${(value ~/ 1000).toString()}K",
-                          style: const TextStyle(fontSize: 12),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 22,
-                      interval: selectedFilter == "1 Tahun"
-                          ? 30
-                          : (selectedFilter == "3 Bulan" ? 15 : 5),
-                      getTitlesWidget: (double value, TitleMeta meta) {
-                        int index = value.toInt();
-                        if (index >= 0 && index < daysInRange) {
-                          String formattedDate = selectedFilter == "1 Tahun"
-                              ? DateFormat('MMM').format(now.subtract(
-                                  Duration(days: daysInRange - index)))
-                              : DateFormat('dd/MM').format(now.subtract(
-                                  Duration(days: daysInRange - index)));
-
-                          return Text(
-                            formattedDate,
-                            style: const TextStyle(fontSize: 10),
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
-                  topTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: salesData,
-                    isCurved: false,
-                    barWidth: 2,
-                    color: const Color(0xFFD39054),
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) =>
-                          FlDotCirclePainter(
-                        radius: 3,
-                        color: const Color(0xFFD39054),
-                        strokeWidth: 1,
-                        strokeColor: Colors.white,
+            height: 250,
+            child: salesData.isNotEmpty // Check if there's data to plot
+                ? LineChart(
+                    LineChartData(
+                      gridData: FlGridData(show: true, drawVerticalLine: true),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (double value, TitleMeta meta) {
+                              return Text(
+                                "${(value ~/ 1000).toString()}K", // Format the sales value
+                                style: const TextStyle(fontSize: 12),
+                              );
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 22,
+                            interval:
+                                1, // Show every month (1/1, 2/1, 3/1, ..., 12/1)
+                            getTitlesWidget: (double value, TitleMeta meta) {
+                              int monthIndex =
+                                  value.toInt() - 1; // Month index (0-11)
+                              if (monthIndex < 0 || monthIndex > 11) {
+                                return Text(""); // Avoid out of range access
+                              }
+                              return Text(
+                                "${(monthIndex + 1).toString().padLeft(2, '0')}", // Format month with 2 digits
+                                style: const TextStyle(fontSize: 10),
+                              );
+                            },
+                          ),
+                        ),
+                        topTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
                       ),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: salesData,
+                          isCurved: false,
+                          barWidth: 2,
+                          color: const Color(0xFFD39054),
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3,
+                              color: const Color(0xFFD39054),
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
+                  )
+                : Center(
+                    child:
+                        Text("No data available")), // Show message if no data
           ),
         ],
       ),
@@ -487,21 +566,21 @@ class _DashboardPageState extends State<DashboardPage> {
               "Performa Produk",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            DropdownButton<String>(
-              value: selectedMonthFilter,
-              onChanged: (newMonthValue) {
-                setState(() {
-                  selectedMonthFilter = newMonthValue!;
-                });
-                _fetchTopProducts(); // Update products when month changes
-              },
-              items: months.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
+            // DropdownButton<String>(
+            //   value: selectedMonthFilter,
+            //   onChanged: (newMonthValue) {
+            //     setState(() {
+            //       selectedMonthFilter = newMonthValue!;
+            //     });
+            //     _fetchTopProducts(); // Update products when month changes
+            //   },
+            //   items: months.map<DropdownMenuItem<String>>((String value) {
+            //     return DropdownMenuItem<String>(
+            //       value: value,
+            //       child: Text(value),
+            //     );
+            //   }).toList(),
+            // ),
           ],
         ),
         const SizedBox(height: 10),

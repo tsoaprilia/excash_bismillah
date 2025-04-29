@@ -36,22 +36,23 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> cart = [];
 
   @override
-void initState() {
-  super.initState();
-  _loadUserData();
-  _refreshProducts();
-  
-  // Tambahkan focus listener untuk menyegarkan data ketika halaman mendapat fokus kembali
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final focusNode = FocusNode();
-    FocusScope.of(context).requestFocus(focusNode);
-    focusNode.addListener(() {
-      if (focusNode.hasFocus) {
-        _refreshProducts(); 
-      }
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _refreshProducts();
+
+    // Tambahkan focus listener untuk menyegarkan data ketika halaman mendapat fokus kembali
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final focusNode = FocusNode();
+      FocusScope.of(context).requestFocus(focusNode);
+      focusNode.addListener(() {
+        if (focusNode.hasFocus) {
+          _refreshProducts();
+        }
+      });
     });
-  });
-}
+  }
+
   void _clearCart() {
     setState(() {
       cart.clear(); // Mengosongkan keranjang belanja
@@ -93,6 +94,8 @@ void initState() {
 
       setState(() {
         _products = products;
+        filteredProducts =
+            products; // 🛠️ Tambahkan ini supaya semua produk langsung tampil
         _categories = categories.toList()..sort();
         _isLoading = false;
       });
@@ -101,19 +104,60 @@ void initState() {
     }
   }
 
-  void _filterProducts(String query) {
-    setState(() {
-      // Tidak perlu lakukan apapun di sini, hanya trigger rebuild
-    });
+  void scanBarcode() async {
+    try {
+      String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        "#ff6666",
+        "Cancel",
+        true,
+        ScanMode.BARCODE,
+      );
+
+      if (barcodeScanRes != "-1") {
+        setState(() {
+          searchController.text =
+              barcodeScanRes; // <-- Set hasil scan ke search field
+          _filterProducts(barcodeScanRes); // <-- Filter berdasarkan hasil scan
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text("Product ID: $barcodeScanRes scanned successfully!")));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Barcode scan was cancelled")));
+      }
+    } catch (e) {
+      print("Error scanning barcode: $e");
+    }
   }
 
-  Future<void> scanBarcode() async {
-    String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-        "#ff6666", "Cancel", true, ScanMode.BARCODE);
+// Modify _filterProducts to ensure proper filtering based on Product ID (from barcode scan)
+  void _filterProducts(String query) {
+    setState(() {
+      filteredProducts = _products.where((product) {
+        // Match barcode scan result with product ID
+        final idMatch =
+            product.id_product.toLowerCase().contains(query.toLowerCase());
 
-    if (barcodeScanRes != "-1") {
-      _filterProducts(barcodeScanRes); // filter langsung
-    }
+        // Also include matching product names if necessary
+        final nameMatch =
+            product.name_product.toLowerCase().contains(query.toLowerCase());
+
+        // Match category if selected
+        final categoryMatch = _selectedCategory == "Semua"
+            ? true
+            : product.id_category == _categoryMap[_selectedCategory];
+
+        return (idMatch || nameMatch) && categoryMatch;
+      }).toList();
+
+      // Log the filtered products for verification
+      filteredProducts.forEach((product) {
+        print(
+            "Filtered Product: ${product.name_product}, ${product.id_product}");
+      });
+    });
   }
 
   List<Product> _getFilteredProducts() {
@@ -177,12 +221,8 @@ void initState() {
     await prefs.setString('user_email', userEmail);
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    final filteredProducts = _getFilteredProducts();
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -262,11 +302,11 @@ void initState() {
                             cart.clear(); // Reset cart
                             totalAmount = 0; // Reset total amount
                           });
-                          _refreshProducts(); 
+                          _refreshProducts();
                         },
                       ),
                     ),
-                  ).then((_) => _refreshProducts()); 
+                  ).then((_) => _refreshProducts());
                 },
               ),
             ),
@@ -358,31 +398,7 @@ void initState() {
               ],
             ),
             const SizedBox(height: 10),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: [
-            //     Row(
-            //       children: [
-            //         const Icon(
-            //           Icons.shopping_cart_outlined,
-            //           color: Color(0xFF1E1E1E),
-            //         ),
-            //         const SizedBox(width: 6),
-            //         const Text(
-            //           'Order Disini',
-            //           style: TextStyle(
-            //             color: Color(0xFF1E1E1E),
-            //             fontWeight: FontWeight.w600,
-            //             fontSize: 14,
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ],
-            // ),
-            // const SizedBox(height: 10),
-
-            // Kategori Produk
+            
             SizedBox(
               height: 40,
               child: ListView.builder(
@@ -396,6 +412,7 @@ void initState() {
                     onTap: () {
                       setState(() {
                         _selectedCategory = category;
+                        
                       });
                     },
                     child: Container(
@@ -440,7 +457,7 @@ void initState() {
                             );
                           },
                         ),
-            ),
+            )
           ],
         ),
       ),

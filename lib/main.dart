@@ -1,21 +1,23 @@
 import 'dart:io';
 import 'package:excash/filemanager.dart';
 import 'package:excash/general_pages/auth/auth_page.dart';
+import 'package:excash/general_pages/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-// Fungsi untuk meminta izin penyimpanan
+// Function to request storage permissions
 Future<void> requestStoragePermission() async {
-  // Meminta izin akses penyimpanan eksternal untuk Android 10+
   if (await Permission.manageExternalStorage.request().isGranted) {
     print("✅ Izin penyimpanan diberikan!");
   } else {
     print("❌ Izin penyimpanan ditolak!");
-    await openAppSettings(); // Membuka pengaturan jika izin ditolak
+    await openAppSettings();
   }
 }
+
+// Function to get download path
 
 Future<String?> getDownloadPath() async {
   Directory? directory;
@@ -34,16 +36,15 @@ Future<String?> getDownloadPath() async {
   return directory?.path;
 }
 
-// Fungsi untuk menyimpan file CSV ke penyimpanan eksternal
+// Function to save file to external storage
 Future<void> saveFileToDownload() async {
   final downloadDir = await getDownloadPath();
   if (downloadDir != null) {
     const fileName = "excash_export.csv";
     var savePath = "$downloadDir/$fileName";
-
     File file = File(savePath);
 
-    // Jika file sudah ada, tambahkan angka di belakang nama file
+    // Check if file exists, add suffix to avoid overwriting
     var count = 1;
     while (file.existsSync()) {
       savePath = "$downloadDir/excash_export ($count).csv";
@@ -51,9 +52,19 @@ Future<void> saveFileToDownload() async {
       count++;
     }
 
-    // Simpan file CSV di path yang sudah dipastikan
-    await file.writeAsString("Data CSV berhasil disimpan!");
-    print("✅ File disimpan di: $savePath");
+    try {
+      // Check if the directory exists
+      final directory = Directory(downloadDir);
+      if (!await directory.exists()) {
+        await directory.create(recursive: true); // Create directory if needed
+      }
+
+      // Save CSV file
+      await file.writeAsString("Data CSV berhasil disimpan!");
+      print("✅ File disimpan di: $savePath");
+    } catch (e) {
+      print("❌ Error saving file: $e");
+    }
   } else {
     print("❌ Gagal mendapatkan path penyimpanan.");
   }
@@ -85,12 +96,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      // Buat home langsung ke SplashScreen-mu
+      home: const SplashScreen(),
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFFD39054)),
         useMaterial3: true,
-      ),
-      home: const AuthPage(),
-    );
+      ),);
   }
 }

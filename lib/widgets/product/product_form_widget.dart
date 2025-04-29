@@ -6,10 +6,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as path; // Aliasing to avoid conflict
+import 'package:flutter/material.dart'; // For BuildContext
 
 class ProductFormWidget extends StatefulWidget {
   final String idProduct;
+  final TextEditingController idProductController;
   final String name;
   final String? category;
   final String price;
@@ -24,11 +26,13 @@ class ProductFormWidget extends StatefulWidget {
   final ValueChanged<String> onSellingPriceChanged;
   final ValueChanged<String> onStockChanged;
   final ValueChanged<String> onDescriptionChanged;
+    final bool isEditMode;
   // final VoidCallback onPickImage;
 
   const ProductFormWidget({
     super.key,
     required this.idProduct,
+    required this.idProductController,
     required this.name,
     required this.category,
     required this.price,
@@ -43,6 +47,7 @@ class ProductFormWidget extends StatefulWidget {
     required this.onSellingPriceChanged,
     required this.onStockChanged,
     required this.onDescriptionChanged,
+     required this.isEditMode,
     // required this.onPickImage,
   });
 
@@ -67,7 +72,6 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
     return userId;
   }
 
-  
   @override
   void initState() {
     super.initState();
@@ -84,7 +88,7 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
   Future<void> _fetchCategories() async {
     try {
       final databasePath = await getDatabasesPath();
-      final dbPath = join(databasePath, 'excash.db');
+      final dbPath = path.join(databasePath, 'excash.db');
       final db = await openDatabase(dbPath);
       final List<Map<String, dynamic>> categories =
           await db.query(tableCategory);
@@ -123,7 +127,6 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
       print("❌ Error saat mengambil kategori: $e");
     }
   }
-  
 
   @override
   void dispose() {
@@ -158,10 +161,12 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
           // ),
           // const SizedBox(height: 16),
           _buildTextField(
-            label: 'ID Produk',
-            controller: _idController,
-            onChanged: widget.onIdProductChanged,
-          ),
+              label: 'ID Produk',
+              controller: widget.idProductController,
+              onChanged: widget.onIdProductChanged,
+               enabled: !widget.isEditMode, // Make the input field disabled
+              backgroundColor: Colors.grey[200]),
+
           _buildTextField(
             label: 'Nama Produk',
             controller: _nameController,
@@ -198,51 +203,85 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
   }
 
   Widget _buildTextField({
-  required String label,
-  required TextEditingController controller,
-  required ValueChanged<String> onChanged,
-  TextInputType keyboardType = TextInputType.text,
-  int maxLines = 1,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12), // Sesuai gambar
-          borderSide: const BorderSide(color: Colors.black), // Default border
+    required String label,
+    required TextEditingController controller,
+    required ValueChanged<String> onChanged,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+    bool enabled = true,
+    Color? backgroundColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: GestureDetector(
+        onTap: enabled
+            ? null
+            : () {
+                // Show the alert if the ID field is tapped
+                showDialog(
+                  context:
+                      context, // context from the widget tree (BuildContext)
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('ID Produk Tidak Bisa Diubah'),
+                      content: const Text('ID Produk ini tidak dapat diubah.'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text('OK'),
+                          onPressed: () {
+                            Navigator.of(context)
+                                .pop(); // Using BuildContext here
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+        child: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            filled: true, // Fill the background with color
+            fillColor: backgroundColor ?? Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12), // Sesuai gambar
+              borderSide:
+                  const BorderSide(color: Colors.black), // Default border
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Colors.black), // Border normal
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                  color: Color(0xFFD39054), width: 2), // Border aktif
+            ),
+            labelText: label,
+          ),
+          onChanged: onChanged,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          enabled: enabled,
+          inputFormatters: label == 'Stok Produk' // Cek jika input adalah stok
+              ? [
+                  FilteringTextInputFormatter.digitsOnly, // Hanya angka
+                  TextInputFormatter.withFunction((oldValue, newValue) {
+                    // Validasi agar stok tidak kurang dari 0
+                    if (int.tryParse(newValue.text) != null &&
+                        int.parse(newValue.text) < 0) {
+                      return oldValue; // Kembalikan nilai sebelumnya jika negatif
+                    }
+                    return newValue; // Jika valid, terima nilai baru
+                  })
+                ]
+              : [],
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.black), // Border normal
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-              color: Color(0xFFD39054), width: 2), // Border aktif
-        ),
-        labelText: label,
       ),
-      onChanged: onChanged,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      inputFormatters: label == 'Stok Produk' // Cek jika input adalah stok
-          ? [
-              FilteringTextInputFormatter.digitsOnly, // Hanya angka
-              TextInputFormatter.withFunction((oldValue, newValue) {
-                // Validasi agar stok tidak kurang dari 0
-                if (int.tryParse(newValue.text) != null &&
-                    int.parse(newValue.text) < 0) {
-                  return oldValue; // Kembalikan nilai sebelumnya jika negatif
-                }
-                return newValue; // Jika valid, terima nilai baru
-              })
-            ]
-          : [],
-    ),
-  );
-}
+    );
+  }
+
   Widget _buildCategoryDropdown() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),

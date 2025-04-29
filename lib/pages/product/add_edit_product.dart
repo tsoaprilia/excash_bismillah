@@ -20,6 +20,8 @@ class AddEditProductPage extends StatefulWidget {
 
 class _AddEditProductPageState extends State<AddEditProductPage> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _idProductController;
+
   late String _idProduct;
   late String _name;
   late String _price;
@@ -36,6 +38,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     super.initState();
     _isUpdateForm = widget.product != null;
     _idProduct = widget.product?.id_product ?? '';
+    _idProductController = TextEditingController(text: _idProduct);
     _name = widget.product?.name_product ?? '';
     _price = widget.product?.price.toString() ?? '';
     _sellingPrice = widget.product?.selling_price.toString() ?? '';
@@ -55,25 +58,76 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 
   Future<void> _scanBarcode() async {
-    try {
-      String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-        "#ff6666", // Warna garis pemindai (hex color)
-        "Batal", // Tombol batal
-        true, // Mode flash
-        ScanMode.BARCODE, // Jenis pemindaian
+    String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+      "#ff6666",
+      "Batal",
+      true,
+      ScanMode.BARCODE,
+    );
+
+    if (barcodeScanRes != '-1') {
+      setState(() {
+        _idProduct = barcodeScanRes;
+        _idProductController.text = barcodeScanRes;
+      });
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              "✅ Berhasil Scan",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "ID Produk berhasil dideteksi:",
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  barcodeScanRes,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFD39054), // Replaced with 0xFFD39054 color
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            actionsPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(
+                        0xFFD39054), // Replaced with 0xFFD39054 color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    setState(() {});
+                  },
+                  child: const Text("OK"),
+                ),
+              ),
+            ],
+          );
+        },
       );
-
-      if (!mounted) return;
-
-      setState(() {
-        _idProduct = barcodeScanRes != "-1"
-            ? barcodeScanRes
-            : DateTime.now().millisecondsSinceEpoch.toString();
-      });
-    } catch (e) {
-      setState(() {
-        _idProduct = DateTime.now().millisecondsSinceEpoch.toString();
-      });
     }
   }
 
@@ -142,12 +196,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                       children: [
                         ProductFormWidget(
                           idProduct: _idProduct,
+                          idProductController: _idProductController,
                           name: _name,
                           category: _selectedCategory,
                           price: _price,
                           sellingPrice: _sellingPrice,
                           stock: _stock,
                           description: _description,
+                          isEditMode: _isUpdateForm,
                           // image: _image,
                           onIdProductChanged: (value) =>
                               setState(() => _idProduct = value),

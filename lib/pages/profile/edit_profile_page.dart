@@ -18,7 +18,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController businessNameController = TextEditingController();
   File? _image;
   String? userId;
-  String? password; // Simpan password agar tidak hilang
+  String? password;
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           emailController.text = user.email;
           fullNameController.text = user.fullName;
           businessNameController.text = user.businessName;
-          password = user.password; // Simpan password lama
+          password = user.password;
           if (user.image != null) {
             _image = File(user.image!);
           }
@@ -47,7 +47,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
@@ -63,8 +64,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       email: emailController.text,
       fullName: fullNameController.text,
       businessName: businessNameController.text,
-      password: password ?? '', // Gunakan password lama jika tidak diubah
-      image: _image?.path ?? 'default.png', // Gunakan default jika null
+      password: password ?? '',
+      image: _image?.path ?? 'default.png',
     );
 
     await ExcashDatabase.instance.updateUser(updatedUser);
@@ -74,9 +75,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     prefs.setString('user_name', updatedUser.fullName);
     prefs.setString('user_business_name', updatedUser.businessName);
     if (_image != null) {
-  prefs.setString('user_profile_image', _image!.path); // Samakan kunci dengan ProfilePage
-}
-
+      prefs.setString('user_profile_image', _image!.path);
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Profil berhasil diperbarui")),
@@ -86,17 +86,85 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Profil")),
-      body: Padding(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    size: 24, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(left: 16.0),
+              child: Text(
+                "Edit Profile",
+                style: TextStyle(
+                  color: Color(0xFF424242),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      backgroundColor: Colors.white, // Set the background color to white
+      body: SingleChildScrollView(
+        // Make the whole body scrollable
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             GestureDetector(
               onTap: _pickImage,
-              child: CircleAvatar(
-                radius: 50,
-                backgroundImage: _image != null ? FileImage(_image!) : null,
-                child: _image == null ? const Icon(Icons.camera_alt, size: 50) : null,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: _image != null ? FileImage(_image!) : null,
+                    child: _image == null
+                        ? const Icon(Icons.camera_alt, size: 50)
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD39054), // Edit button color
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        padding: const EdgeInsets.all(6),
+                        child: const Icon(Icons.edit,
+                            color: Colors.white, size: 18), // Edit icon
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -131,7 +199,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -141,6 +210,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.black12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              // Border saat fokus
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFD39054), width: 2),
             ),
           ),
         ),

@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int initialIndex;
+
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -34,6 +36,8 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+        _selectedIndex = widget.initialIndex;
+
     // Menunda eksekusi hingga widget dibangun
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ShowCaseWidget.of(context).startShowCase([
