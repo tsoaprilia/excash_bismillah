@@ -3,6 +3,7 @@ import 'package:excash/models/excash.dart';
 import 'package:excash/pages/product/add_edit_product.dart';
 import 'package:flutter/material.dart';
 import 'package:excash/models/product.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductCardWidget extends StatefulWidget {
@@ -30,6 +31,9 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
   // Variable untuk menyimpan stok sementara yang bisa berubah sesuai klik
   late int _currentStock;
 
+ final _idr = NumberFormat('#,##0', 'id_ID');
+  String fRp(int value) => _idr.format(value);
+  
   @override
   void initState() {
     super.initState();
@@ -275,7 +279,7 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                         color: Color(0xFFD39054), size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      "Rp. ${widget.product.selling_price}",
+                      "Rp. ${fRp(widget.product.selling_price)}",
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,

@@ -1,4 +1,5 @@
 import 'package:excash/database/excash_database.dart';
+import 'package:excash/models/excash.dart';
 import 'package:excash/models/order.dart';
 import 'package:excash/models/order_detail.dart';
 import 'package:excash/models/product.dart';
@@ -8,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:pie_chart/pie_chart.dart' as pc;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -34,6 +36,7 @@ class _DashboardPageState extends State<DashboardPage> {
     "November",
     "Desember"
   ];
+  List<Map<String, dynamic>> categorySales = [];
   Map<String, dynamic> incomeData = {};
   List<Map<String, dynamic>> topProducts = [];
   List<FlSpot> salesData = [];
@@ -61,6 +64,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _fetchSalesData(); // Automatically fetch sales data
     _fetchData(); // Automatically fetch income data
     _fetchTopProducts(); // Automatically fetch top products
+    _fetchCategorySales();
   }
 
   Future<void> _initDatabase() async {
@@ -202,6 +206,174 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
+  Future<void> _fetchCategorySales() async {
+    final db = await ExcashDatabase.instance.database;
+
+    String monthNumber =
+        (months.indexOf(selectedMonthFilter) + 1).toString().padLeft(2, '0');
+
+    final List<Map<String, dynamic>> result = await db.rawQuery(''' 
+    SELECT c.${CategoryFields.name_category} AS category_name, 
+           COALESCE(SUM(d.${OrderDetailFields.quantity}), 0) AS total_terjual
+    FROM $tableOrderDetail d
+    JOIN $tableProduct p ON d.${OrderDetailFields.id_product} = p.${ProductFields.id_product}
+    JOIN $tableCategory c ON p.${ProductFields.id_category} = c.${CategoryFields.id_category}
+    JOIN $tableOrders o ON d.${OrderDetailFields.id_order} = o.${OrderFields.id_order}  
+    WHERE o.${OrderFields.total_price} > 0  
+    AND strftime('%Y', o.${OrderFields.created_at}) = ?  
+    AND strftime('%m', o.${OrderFields.created_at}) = ?  
+    GROUP BY c.${CategoryFields.name_category}
+    ORDER BY total_terjual DESC
+  ''', [selectedYear, monthNumber]);
+
+    // If no data is found, set an empty list, and show message
+    setState(() {
+      categorySales = result.isEmpty ? [] : result;
+    });
+  }
+
+  List<PieChartSectionData> _buildCategoryPieChart() {
+    List<PieChartSectionData> sections = [];
+    double totalSales = 0.0;
+
+    // Calculate the total sales for all categories
+    for (var category in categorySales) {
+      totalSales += (category['total_terjual'] as num).toDouble();
+    }
+
+    // If no data, show a grey pie chart with the "No Data" message
+    if (categorySales.isEmpty) {
+      sections.add(PieChartSectionData(
+        value: 100,
+        color: Colors.grey, // Grey color when no data
+        title: "No Data",
+        radius: 50,
+        titleStyle: TextStyle(
+            fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+      ));
+      return sections;
+    }
+
+    // Limit to the top 3 categories and group others
+    List<Map<String, dynamic>> topCategories = categorySales.take(3).toList();
+    double othersTotal = 0.0;
+
+    // Summing total for the top categories and the rest
+    for (var category in topCategories) {
+      totalSales += (category['total_terjual'] as num).toDouble();
+    }
+
+    // Add "Others" if there are more than 3 categories
+    if (categorySales.length > 3) {
+      for (var category in categorySales.skip(3)) {
+        othersTotal += (category['total_terjual'] as num).toDouble();
+      }
+      topCategories
+          .add({'category_name': 'Others', 'total_terjual': othersTotal});
+    }
+
+    // Create PieChartSectionData for the top categories
+    for (var category in topCategories) {
+      double percentage = totalSales > 0
+          ? (category['total_terjual'] as num).toDouble() / totalSales * 100
+          : 0;
+
+      sections.add(PieChartSectionData(
+        value: percentage,
+        color: Color(0xFFD39054), // Color for pie sections
+        title:
+            '${category['category_name']} (${percentage.toStringAsFixed(1)}%)',
+        radius: 60, // Increased size for better visibility
+        titleStyle: TextStyle(
+            fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+      ));
+    }
+
+    return sections;
+  }
+
+  Widget _buildCategoryPieChartWidget() {
+    // Ambil 5 kategori teratas
+    final topCategories = categorySales.take(3).toList();
+
+    // Hitung total semua kategori
+    final totalAll = categorySales.fold<double>(
+        0, (sum, item) => sum + (item['total_terjual'] as num).toDouble());
+
+    // Hitung total dari 5 kategori teratas
+    final totalTop5 = topCategories.fold<double>(
+        0, (sum, item) => sum + (item['total_terjual'] as num).toDouble());
+
+    // Hitung sisanya untuk "Lainnya"
+    final othersTotal = totalAll - totalTop5;
+
+    // Buat dataMap
+    Map<String, double> dataMap = {
+      for (var item in topCategories)
+        item['category_name']: (item['total_terjual'] as num).toDouble(),
+      if (othersTotal > 0) 'Lainnya..': othersTotal,
+    };
+
+    // Daftar warna sesuai jumlah kategori
+    final colorList = [
+      Color(0xFF8C5C30), // Warna tua banget (shade)
+      Color.fromARGB(255, 183, 118, 57), // Warna agak tua
+      Color(0xFFD39054), // Warna utama
+      Color.fromARGB(201, 248, 206, 166), // Warna sangat muda
+    ];
+
+    return pc.PieChart(
+      dataMap: dataMap,
+      animationDuration: Duration(milliseconds: 800),
+      chartLegendSpacing: 32,
+      chartRadius: 200,
+      colorList: colorList.take(dataMap.length).toList(),
+      initialAngleInDegree: 0,
+      chartType: pc.ChartType.disc,
+      ringStrokeWidth: 32,
+      legendOptions: pc.LegendOptions(
+        showLegendsInRow: false,
+        legendPosition: pc.LegendPosition.right,
+        showLegends: true,
+        legendShape: BoxShape.circle,
+        legendTextStyle: TextStyle(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      chartValuesOptions: pc.ChartValuesOptions(
+        showChartValueBackground: true,
+        showChartValues: true,
+        showChartValuesInPercentage: true, // <- tampilkan sebagai persen
+        showChartValuesOutside: false,
+        decimalPlaces: 0, // <- tampilkan sebagai 10%, bukan 10.0%
+      ),
+    );
+  }
+
+  Widget _buildCategorySales() {
+    // Always display the "Kategori Terjual" text
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Kategori Produk Terlaris",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6), // Space after the title
+
+        // If there is no data, show the "No Data" message
+        if (categorySales.isEmpty)
+          Text(
+            'Belum ada data penjualan.',
+          )
+
+        // If there is data, show the pie chart
+        else
+          _buildCategoryPieChartWidget(), // Pie chart widget here
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -262,7 +434,10 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 20),
               _buildSalesPerformance(),
               const SizedBox(height: 20),
+              _buildCategorySales(),
+              const SizedBox(height: 20),
               _buildProductPerformance(),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -274,11 +449,11 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7A257).withOpacity(0.2),
+        color: const Color(0xFFD39054).withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF0AE75).withOpacity(0.1),
+            color: const Color(0xFFD39054).withOpacity(0.1),
             blurRadius: 6,
             spreadRadius: 2,
             offset: const Offset(0, 2),
@@ -306,6 +481,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _fetchData();
               _fetchSalesData();
               _fetchTopProducts();
+              _fetchCategorySales();
             },
           ),
           _buildDropdown(
@@ -317,6 +493,7 @@ class _DashboardPageState extends State<DashboardPage> {
               });
               _fetchTopProducts();
               _fetchData();
+              _fetchCategorySales();
             },
           ),
         ],
@@ -393,11 +570,9 @@ class _DashboardPageState extends State<DashboardPage> {
               child: _bigStatCard(
                 "Hari Ini",
                 incomeData != null && incomeData['hari_ini'] != null
-                    ? formatRupiah(incomeData['hari_ini']['income']) ??
-                        "0" // Default to "0" if null
-                    : "0", // Default to "0" if 'hari_ini' is null
-                "${incomeData != null && incomeData['hari_ini'] != null ? incomeData['hari_ini']['transactions'] ?? 0 // Default to 0 if null
-                    : 0} transaksi", // Default to 0 if 'transactions' is null
+                    ? "Rp ${formatRupiah(incomeData['hari_ini']['income']) ?? "0"}" // Menambahkan "Rp" di depan nilai
+                    : "Rp 0", // Default ke "Rp 0" jika 'hari_ini' null
+                "${incomeData != null && incomeData['hari_ini'] != null ? incomeData['hari_ini']['transactions'] ?? 0 : 0} transaksi", // Default ke 0 transaksi jika null
               ),
             ),
             const SizedBox(width: 10), // Space between the two cards
@@ -405,13 +580,11 @@ class _DashboardPageState extends State<DashboardPage> {
               child: _bigStatCard(
                 "Bulan Ini",
                 incomeData != null && incomeData['bulan_ini'] != null
-                    ? formatRupiah(incomeData['bulan_ini']['income']) ??
-                        "0" // Default to "0" if null
-                    : "0", // Default to "0" if 'bulan_ini' is null
-                "${incomeData != null && incomeData['bulan_ini'] != null ? incomeData['bulan_ini']['transactions'] ?? 0 // Default to 0 if null
-                    : 0} transaksi", // Default to 0 if 'transactions' is null
+                    ? "Rp ${formatRupiah(incomeData['bulan_ini']['income']) ?? "0"}" // Menambahkan "Rp" di depan nilai
+                    : "Rp 0", // Default ke "Rp 0" jika 'bulan_ini' null
+                "${incomeData != null && incomeData['bulan_ini'] != null ? incomeData['bulan_ini']['transactions'] ?? 0 : 0} transaksi", // Default ke 0 transaksi jika null
               ),
-            ),
+            )
           ],
         ),
       ],
@@ -475,7 +648,7 @@ class _DashboardPageState extends State<DashboardPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               Text(
-                "Performa Penjualan",
+                "Performa Penjualan Tahunan",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
@@ -563,7 +736,7 @@ class _DashboardPageState extends State<DashboardPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              "Performa Produk",
+              "Produk Terlaris",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             // DropdownButton<String>(
@@ -587,7 +760,6 @@ class _DashboardPageState extends State<DashboardPage> {
         if (topProducts.isEmpty)
           const Text(
             'Belum ada data produk terjual.',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           )
         else
           Column(

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:excash/pages/transaction/transaction_detail_page.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/order.dart';
@@ -28,6 +29,9 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
   double payment = 0;
   double change = 0;
 
+  final _idr = NumberFormat('#,##0', 'id_ID');
+  String fRp(int value) => _idr.format(value);
+
   @override
   void dispose() {
     paymentController.dispose();
@@ -41,6 +45,8 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
       'id': prefs.getString('id') ?? 'unknown',
       'name_lengkap': prefs.getString('name_lengkap') ?? "",
       'bisnis_name': prefs.getString('bisnis_name') ?? "",
+      'bisnis_address': prefs.getString('bisnis_address') ?? "",
+      'user_npwp': prefs.getString('user_npwp') ?? "",
     };
   }
 
@@ -223,6 +229,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                         style: const TextStyle(fontSize: 18)),
                   ],
                 ),
+
                 const SizedBox(height: 10),
                 const Divider(), // Garis pemisah
 
@@ -284,13 +291,13 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                        '${item['quantity']} x Rp ${product.selling_price}',
+                                        '${item['quantity']} x Rp ${fRp(product.selling_price)}',
                                         textAlign: TextAlign.center),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                      'Rp ${(product.selling_price * item['quantity']).toInt()}',
+                                      'Rp ${fRp((product.selling_price * item['quantity']).toInt())}',
                                       textAlign: TextAlign.right,
                                     ),
                                   ),
@@ -313,7 +320,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                     const Text("Total:",
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("Rp ${getTotalPrice()}",
+                    Text("Rp ${fRp(getTotalPrice())}",
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                   ],
@@ -326,7 +333,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                   controller: paymentController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "Uang Pelanggan",
+                    labelText: "Masukkan Uang Pelanggan",
                     labelStyle:
                         TextStyle(color: Color(0xFFD39054)), // Warna label
                     focusedBorder: UnderlineInputBorder(
@@ -353,7 +360,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                     const Text("Kembalian:",
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("Rp ${change.toInt()}",
+                    Text("Rp ${fRp(change.toInt())}",
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                   ],

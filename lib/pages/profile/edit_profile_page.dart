@@ -16,6 +16,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController businessNameController = TextEditingController();
+   final TextEditingController businessAddressController = TextEditingController();
+  final TextEditingController npwpController = TextEditingController();
   File? _image;
   String? userId;
   String? password;
@@ -37,6 +39,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           emailController.text = user.email;
           fullNameController.text = user.fullName;
           businessNameController.text = user.businessName;
+           businessAddressController.text = user.businessAddress;
+          npwpController.text = user.npwp ?? '';
           password = user.password;
           if (user.image != null) {
             _image = File(user.image!);
@@ -64,6 +68,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       email: emailController.text,
       fullName: fullNameController.text,
       businessName: businessNameController.text,
+            businessAddress: businessAddressController.text,
+      npwp: npwpController.text.isEmpty ? null : npwpController.text,
       password: password ?? '',
       image: _image?.path ?? 'default.png',
     );
@@ -74,6 +80,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     prefs.setString('user_email', updatedUser.email);
     prefs.setString('user_name', updatedUser.fullName);
     prefs.setString('user_business_name', updatedUser.businessName);
+     await prefs.setString('user_business_address', updatedUser.businessAddress);
+    if (updatedUser.npwp != null) {
+      await prefs.setString('user_npwp', updatedUser.npwp!);
+    } else {
+      await prefs.remove('user_npwp');
+    }
     if (_image != null) {
       prefs.setString('user_profile_image', _image!.path);
     }
@@ -173,6 +185,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             buildTextField("Nama Lengkap", fullNameController),
             const SizedBox(height: 16),
             buildTextField("Nama Usaha", businessNameController),
+            const SizedBox(height: 24),
+               buildTextField("Alamat Usaha", businessAddressController),
+            const SizedBox(height: 16),
+            buildTextField("NPWP (Opsional)", npwpController),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

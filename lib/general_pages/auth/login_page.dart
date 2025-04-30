@@ -14,7 +14,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool rememberMe = false;
   bool isPasswordVisible = false;
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController fullNameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   @override
@@ -24,70 +24,155 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> loadRememberedUser() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? rememberedEmail = prefs.getString('remembered_email');
-    String? rememberedPassword = prefs.getString('remembered_password');
-    
-    if (rememberedEmail != null && rememberedPassword != null) {
-      setState(() {
-        emailController.text = rememberedEmail;
-        passwordController.text = rememberedPassword;
-        rememberMe = true;
-      });
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? rememberedFullName = prefs.getString('remembered_full_name');
+  String? rememberedPassword = prefs.getString('remembered_password');
+  bool? rememberMeState = prefs.getBool('remember_me') ?? false;
+  int? rememberMeTimestamp = prefs.getInt('remember_me_timestamp');
+
+  if (rememberMeState == true && rememberedFullName != null && rememberedPassword != null) {
+    // Check if the "Remember Me" timestamp is older than 1 week (7 days)
+    if (rememberMeTimestamp != null) {
+      final timestampDuration = DateTime.now().millisecondsSinceEpoch - rememberMeTimestamp;
+      final oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+
+      if (timestampDuration > oneWeekInMilliseconds) {
+        setState(() {
+          rememberMe = false; // Expired, reset the flag
+        });
+        prefs.remove('remembered_full_name');
+        prefs.remove('remembered_password');
+        prefs.remove('remember_me_timestamp');
+      } else {
+        // Still within 1 week, load the credentials
+        setState(() {
+          fullNameController.text = rememberedFullName;
+          passwordController.text = rememberedPassword;
+          rememberMe = rememberMeState;
+        });
+      }
     }
   }
+}
 
 
-Future<void> saveUserData(String idUser, String nameLengkap, String bisnisName) async {
+ 
+  Future<void> saveUserData(String idUser, String nameLengkap,
+    String bisnisName, String bisnisAddress, String? npwp) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.setString('id_user', idUser);
   await prefs.setString('name_lengkap', nameLengkap);
   await prefs.setString('bisnis_name', bisnisName);
+  await prefs.setString('bisnis_address', bisnisAddress);
+  if (npwp != null && npwp.isNotEmpty) {
+    await prefs.setString('user_npwp', npwp);
+  } else {
+    await prefs.remove('user_npwp');
+  }
+
+  // Save timestamp when Remember Me was last checked
+  if (rememberMe) {
+    await prefs.setInt('remember_me_timestamp', DateTime.now().millisecondsSinceEpoch);
+  } else {
+    await prefs.remove('remember_me_timestamp');
+  }
 }
 
 
-Future<void> loginUser() async {
-  String email = emailController.text;
+ Future<void> loginUser() async {
+  String fullName = fullNameController.text; // rename to fullName
   String password = passwordController.text;
 
-  final user = await ExcashDatabase.instance.loginUser(email, password);
+  // Update the login query to use fullName and password
+  final user = await ExcashDatabase.instance.loginUser(fullName, password);
+
   if (user != null) {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_id', user.id!);  // Pastikan ID disimpan di sini
+    await prefs.setString('user_id', user.id!);
     await prefs.setString('user_name', user.fullName);
     await prefs.setString('user_email', user.email);
     await prefs.setString('user_business_name', user.businessName);
+    await prefs.setString('user_business_address', user.businessAddress);
+    if (user.npwp != null && user.npwp!.isNotEmpty) {
+      await prefs.setString('user_npwp', user.npwp!);
+    }
 
     // Simpan data user untuk transaksi
-    await saveUserData(user.id!, user.fullName, user.businessName);
+    await saveUserData(
+      user.id!,
+      user.fullName,
+      user.businessName,
+      user.businessAddress,
+      user.npwp,
+    );
 
     if (rememberMe) {
-      await prefs.setString('remembered_email', email);
-      await prefs.setString('remembered_password', password);
+      await prefs.setString('remembered_full_name', fullName); // Save fullName
+      await prefs.setString('remembered_password', password); // Save password
+      await prefs.setBool('remember_me', true); // Save rememberMe state
+      await prefs.setInt('remember_me_timestamp', DateTime.now().millisecondsSinceEpoch); // Save timestamp
     } else {
-      await prefs.remove('remembered_email');
+      await prefs.remove('remembered_full_name');
       await prefs.remove('remembered_password');
+      await prefs.setBool('remember_me', false); // Save rememberMe state
+      await prefs.remove('remember_me_timestamp');
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Login berhasil")),
     );
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const MainScreen()));
+      context,
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+    );
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Email atau password salah")),
+      const SnackBar(content: Text("Full Name atau password salah")),
     );
   }
 }
 
+// Future<void> loginUser() async {
+//   String email = fullNameController.text;
+//   String password = passwordController.text;
+
+//   final user = await ExcashDatabase.instance.loginUser(email, password);
+//   if (user != null) {
+//     final SharedPreferences prefs = await SharedPreferences.getInstance();
+//     await prefs.setString('user_id', user.id!);  // Pastikan ID disimpan di sini
+//     await prefs.setString('user_name', user.fullName);
+//     await prefs.setString('user_email', user.email);
+//     await prefs.setString('user_business_name', user.businessName);
+
+//     // Simpan data user untuk transaksi
+//     await saveUserData(user.id!, user.fullName, user.businessName);
+
+//     if (rememberMe) {
+//       await prefs.setString('remembered_email', email);
+//       await prefs.setString('remembered_password', password);
+//     } else {
+//       await prefs.remove('remembered_email');
+//       await prefs.remove('remembered_password');
+//     }
+
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(content: Text("Login berhasil")),
+//     );
+//     Navigator.pushReplacement(
+//         context, MaterialPageRoute(builder: (context) => const MainScreen()));
+//   } else {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(content: Text("Email atau password salah")),
+//     );
+//   }
+// }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -124,13 +209,16 @@ Future<void> loginUser() async {
                   ),
                 ),
                 const SizedBox(height: 24),
-                buildTextField("Email", emailController, hintText: "aprilia@gmail.com"),
+                buildTextField("Nama Pengguna", fullNameController,
+                    hintText: "Aprilia Dwi Cristyana"),
                 const SizedBox(height: 16),
                 buildTextField("Kata Sandi", passwordController,
                     obscureText: !isPasswordVisible,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -230,7 +318,11 @@ Future<void> loginUser() async {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -239,7 +331,9 @@ Future<void> loginUser() async {
             hintText: hintText,
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.black12)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.black12)),
             suffixIcon: suffixIcon,
           ),
         ),

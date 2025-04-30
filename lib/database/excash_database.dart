@@ -36,8 +36,10 @@ class ExcashDatabase {
       CREATE TABLE $tableUser (
         ${UserFields.id} TEXT PRIMARY KEY,
         ${UserFields.email} TEXT UNIQUE NOT NULL,
-        ${UserFields.fullName} TEXT NOT NULL,
+        ${UserFields.fullName} TEXT UNIQUE NOT NULL,
         ${UserFields.businessName} TEXT NOT NULL,
+        ${UserFields.businessAddress} TEXT NOT NULL,
+        ${UserFields.npwp} TEXT,
         ${UserFields.password} TEXT NOT NULL,
         ${UserFields.image} TEXT NULL
       )
@@ -116,7 +118,6 @@ class ExcashDatabase {
     print(tables);
     // Ini akan menampilkan semua tabel yang ada di database
   }
-
 
   Future<void> getDatabaseSize() async {
     // Mendapatkan path database
@@ -359,59 +360,64 @@ class ExcashDatabase {
   }
 
   // 🔹 REGISTER USER
+  // 🔹 REGISTER USER
   Future<int> registerUser(User user) async {
     final db = await instance.database;
 
-    // Memeriksa apakah email sudah ada di database
-    final existingUser = await db.query(
-      'users', // Pastikan menggunakan nama tabel yang benar
+    // Cek apakah email sudah digunakan
+    final existingEmailUser = await db.query(
+      tableUser,
       where: '${UserFields.email} = ?',
       whereArgs: [user.email],
     );
-
-    // Jika sudah ada, lemparkan exception
-    if (existingUser.isNotEmpty) {
+    if (existingEmailUser.isNotEmpty) {
       throw Exception("Email sudah digunakan");
     }
 
-    // Membuat user baru dengan ID yang dihasilkan oleh UUID
+    // Cek apakah fullname sudah digunakan
+    final existingFullnameUser = await db.query(
+      tableUser,
+      where: '${UserFields.fullName} = ?',
+      whereArgs: [user.fullName],
+    );
+    if (existingFullnameUser.isNotEmpty) {
+      throw Exception("Nama lengkap sudah digunakan");
+    }
+
+    // Buat user baru dengan ID UUID
     final newUser = user.copy(id: const Uuid().v4());
 
-    // Menyisipkan data user baru ke dalam database
+    // Masukkan user ke database
     final insertedId = await db.insert(
-      'users', // Pastikan nama tabel yang benar
+      tableUser,
       newUser.toJson(),
-      conflictAlgorithm: ConflictAlgorithm
-          .replace, // Jika data sudah ada, ganti dengan yang baru
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
-    print(
-        "User berhasil terdaftar dengan ID: $insertedId"); // Debugging: melihat ID yang baru terdaftar
+    print("User berhasil terdaftar dengan ID: $insertedId");
     return insertedId;
   }
 
   // 🔹 LOGIN USER
-  Future<User?> loginUser(String email, String password) async {
-    final db = await instance.database;
+  Future<User?> loginUser(String fullName, String password) async {
+  final db = await instance.database;
 
-    final result = await db.query(
-      'users', // Pastikan menggunakan nama tabel yang benar
-      where: '${UserFields.email} = ? AND ${UserFields.password} = ?',
-      whereArgs: [email, password],
-    );
+  final result = await db.query(
+    tableUser,
+    where: '${UserFields.fullName} = ? AND ${UserFields.password} = ?',
+    whereArgs: [fullName, password],
+  );
 
-    if (result.isNotEmpty) {
-      print("User berhasil login: ${result.first}");
-
-      // Memanggil untuk cek ukuran database setelah login berhasil
-      await ExcashDatabase.instance.getDatabaseSize();
-
-      return User.fromJson(result.first);
-    } else {
-      print("Login gagal: tidak ada user yang cocok.");
-      return null;
-    }
+  if (result.isNotEmpty) {
+    print("User berhasil login: ${result.first}");
+    await ExcashDatabase.instance.getDatabaseSize();
+    return User.fromJson(result.first);
+  } else {
+    print("Login gagal: tidak ada user yang cocok.");
+    return null;
   }
+}
+
 
   Future<User?> getUserById(String id) async {
     final db = await instance.database;
@@ -423,6 +429,8 @@ class ExcashDatabase {
         UserFields.email,
         UserFields.fullName,
         UserFields.businessName,
+        UserFields.businessAddress,
+        UserFields.npwp,
         UserFields.password,
         UserFields.image,
       ],

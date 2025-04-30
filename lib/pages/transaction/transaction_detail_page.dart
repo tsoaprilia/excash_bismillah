@@ -23,6 +23,9 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   late Future<User?> user;
   BlueThermalPrinter printer = BlueThermalPrinter.instance;
 
+  final _idr = NumberFormat('#,##0', 'id_ID');
+  String fRp(int value) => _idr.format(value);
+
   @override
   void initState() {
     super.initState();
@@ -49,47 +52,89 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   ''', [orderId]);
   }
 
+  String formatTextForPrinting(String text) {
+    int maxLineLength = 25;
+
+    // Baris pertama
+    String firstLine;
+    String remainingText;
+
+    if (text.length <= maxLineLength) {
+      return text; // Tidak perlu dipecah
+    } else {
+      firstLine = text.substring(0, maxLineLength);
+      remainingText = text.substring(maxLineLength);
+    }
+
+    // Baris kedua
+    String secondLine;
+    if (remainingText.length <= maxLineLength) {
+      secondLine = remainingText;
+    } else {
+      secondLine = remainingText.substring(0, maxLineLength - 3) + '...';
+    }
+
+    return '$firstLine\n$secondLine';
+  }
+
   /// Fungsi cetak struk
   void _printReceipt(Order orderData, User userData,
       List<Map<String, dynamic>> orderDetailsData, BuildContext context) async {
     if ((await printer.isConnected)!) {
       try {
         printer.printNewLine();
-        printer.printCustom('TOKO ${userData.businessName}', 1, 1);
-        printer.printCustom('oleh excash', 1, 1);
-
         printer.printNewLine();
         printer.printCustom(
-            'Waktu: ${formatTanggal(orderData.created_at)}', 1, 1);
-        printer.printCustom('Kasir: ${userData.fullName}', 1, 1);
+          userData.businessName.toUpperCase(),
+          3,
+          1,
+        );
+
+        printer.printCustom(
+            formatTextForPrinting(userData.businessAddress), 1, 1);
+        printer.printCustom('NPWP : ${userData.npwp}', 1, 1);
+
+        printer.printNewLine();
+        printer.printCustom('Id Transaksi: ${orderData.id_order}', 1, 0);
+        printer.printCustom(
+            'Waktu   : ${formatTanggal(orderData.created_at)}', 1, 0);
+        printer.printCustom('Kasir: ${userData.fullName}', 1, 0);
 
         printer.printCustom('--------------------------------', 1, 1);
         printer.printNewLine();
         printer.printCustom('Detail', 1, 1);
         printer.printCustom('--------------------------------', 1, 1);
 
-        for (var detail in orderDetailsData) {
+        for (var d in orderDetailsData) {
+          // Baris 1: nama produk
+          printer.printCustom(d['nama_produk'], 1, 0);
+          // Baris 2: qty x @harga_satuan    subtotal di kanan
           printer.printLeftRight(
-            '${detail['nama_produk']}',
-            '${detail['quantity']}x${detail['harga_satuan'].toInt()} ${detail['subtotal'].toInt()}',
+            '${d['quantity']} x @${fRp(d['harga_satuan'].toInt())}',
+            fRp(d['subtotal'].toInt()),
             1,
           );
         }
-
         printer.printCustom('--------------------------------', 1, 1);
-        printer.printLeftRight('Total', 'Rp ${orderData.total_price}', 1);
-        printer.printCustom('--------------------------------', 1, 1);
-
-        printer.printNewLine();
-        printer.printLeftRight('Uang Diterima', 'Rp ${orderData.payment}', 1);
-        printer.printLeftRight('Kembalian', 'Rp ${orderData.change}', 1);
+        printer.printLeftRight('TOTAL', 'Rp ${fRp(orderData.total_price)}', 1);
         printer.printCustom('--------------------------------', 1, 1);
 
+        // 6. Pembayaran & kembalian
+        printer.printLeftRight('Uang Diterima', fRp(orderData.payment), 1);
+        printer.printLeftRight('Kembalian', fRp(orderData.change), 1);
+
         printer.printNewLine();
+        // 7. Footer *LUNAS*
+        printer.printCustom('*LUNAS*', 2, 1);
         printer.printNewLine();
-        printer.printCustom('TERIMA KASIH!', 2, 1);
+
+        printer.printCustom('TERIMA KASIH!', 1, 1);
         printer.printCustom('Simpan struk ini', 1, 1);
         printer.printCustom('sebagai bukti pembayaran', 1, 1);
+        printer.printNewLine();
+        printer.printCustom('--------------------------------', 1, 1);
+        printer.printCustom('Excash - Kasir Offline, Performa Online!', 0, 1);
+        printer.printNewLine();
         printer.printNewLine();
         printer.printNewLine();
         printer.printNewLine();
@@ -353,12 +398,15 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          _buildRow("Subtotal", "Rp ${orderData.total_price}"),
+                          _buildRow(
+                              "Subtotal", "Rp ${fRp(orderData.total_price)}"),
                           const Divider(),
-                          _buildRow2("Total", "Rp ${orderData.total_price}",
+                          _buildRow2(
+                              "Total", "Rp ${fRp(orderData.total_price)}",
                               isBold: true, textColor: const Color(0xFFD39054)),
-                          _buildRow("Uang Diterima", "Rp ${orderData.payment}"),
-                          _buildRow("Kembalian", "Rp ${orderData.change}"),
+                          _buildRow(
+                              "Uang Diterima", "Rp ${fRp(orderData.payment)}"),
+                          _buildRow("Kembalian", "Rp ${fRp(orderData.change)}"),
                           const SizedBox(height: 24),
                           SizedBox(
                             width: double.infinity,
@@ -417,11 +465,11 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
-              "${detail['quantity'].toString()} x Rp ${detail['harga_satuan'].toInt()}"), // Quantity
+              "${detail['quantity'].toString()} x Rp ${fRp(detail['harga_satuan'].toInt())}"), // Quantity
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text("Rp ${detail['subtotal'].toInt()}"), // Subtotal
+          child: Text("Rp ${fRp(detail['subtotal'].toInt())}"), // Subtotal
         ),
       ],
     );

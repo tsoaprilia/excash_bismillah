@@ -18,11 +18,19 @@ class TransactionCardWidget extends StatelessWidget {
 
   String formatTanggal(String time) {
     try {
-      DateTime dateTime = DateTime.parse(time); // Ubah String ke DateTime
+      DateTime dateTime = DateTime.parse(time);
       return DateFormat('yyyy-MM-dd / HH:mm').format(dateTime);
     } catch (e) {
-      return time; // Jika gagal parsing, tampilkan apa adanya
+      return time;
     }
+  }
+
+  String formatRupiah(String value) {
+    final formatter = NumberFormat('#,##0', 'id_ID');
+    // Bersihkan karakter non-digit, termasuk "Rp", spasi, titik, dll.
+    String cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    int parsed = int.tryParse(cleaned) ?? 0;
+    return 'Rp ${formatter.format(parsed)}';
   }
 
   @override
@@ -47,7 +55,7 @@ class TransactionCardWidget extends StatelessWidget {
         children: [
           _buildRow("ID Transaksi", transactionId),
           _buildDivider(),
-          _buildRow("Total", total, isTotal: true),
+          _buildRow("Total", formatRupiah(total), isTotal: true),
           _buildDivider(),
           _buildRow("Waktu", formatTanggal(time), isWrap: true),
           _buildDivider(),
@@ -65,7 +73,8 @@ class TransactionCardWidget extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TransactionDetailPage(orderId: int.parse(transactionId)),
+                        builder: (context) =>
+                            TransactionDetailPage(orderId: int.parse(transactionId)),
                       ),
                     );
                   },
@@ -83,9 +92,8 @@ class TransactionCardWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // Align to the top to prevent misalignment
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title column
           Expanded(
             flex: 3,
             child: Text(
@@ -94,7 +102,6 @@ class TransactionCardWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // Value column
           Expanded(
             flex: 5,
             child: Align(
@@ -123,12 +130,11 @@ class TransactionCardWidget extends StatelessWidget {
                             : (isBold ? FontWeight.bold : FontWeight.normal),
                         color: isTotal ? const Color(0xFFD39054) : const Color(0xFF1E1E1E),
                       ),
-                      overflow: TextOverflow.ellipsis, // Prevent overflow
+                      overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
             ),
           ),
-          // Action button (if any)
           if (trailing != null) ...[const SizedBox(width: 8), trailing],
         ],
       ),

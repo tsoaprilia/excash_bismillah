@@ -18,6 +18,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController businessNameController = TextEditingController();
+  final TextEditingController businessAddressController =
+      TextEditingController();
+  final TextEditingController npwpController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -42,8 +45,17 @@ class _RegisterPageState extends State<RegisterPage> {
     String email = emailController.text;
     String fullName = fullNameController.text;
     String businessName = businessNameController.text;
+    String businessAddress = businessAddressController.text;
+    String npwp = npwpController.text;
     String password = passwordController.text;
     String confirmPassword = confirmPasswordController.text;
+
+    if (businessAddress.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Alamat usaha tidak boleh kosong")),
+      );
+      return;
+    }
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,6 +80,8 @@ class _RegisterPageState extends State<RegisterPage> {
       email: email,
       fullName: fullName,
       businessName: businessName,
+      businessAddress: businessAddress,
+      npwp: npwp.isEmpty ? null : npwp,
       password: password,
       image: null,
     );
@@ -89,7 +103,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -121,28 +135,36 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 24),
-
               buildTextField(
                 label: "Email",
                 hintText: "aprilia@gmail.com",
                 controller: emailController,
               ),
               const SizedBox(height: 16),
-
               buildTextField(
-                label: "Nama Lengkap",
+                label: "Nama Pengguna",
                 hintText: "Aprilia Dwi Cristyana",
                 controller: fullNameController,
               ),
               const SizedBox(height: 16),
-
               buildTextField(
                 label: "Nama Usaha",
                 hintText: "April'Studio",
                 controller: businessNameController,
               ),
               const SizedBox(height: 16),
-
+              buildTextField(
+                label: "Alamat Usaha",
+                hintText: "Jl. Mawar No. 12, Surabaya",
+                controller: businessAddressController,
+              ),
+              const SizedBox(height: 16),
+              buildTextField(
+                label: "NPWP (Opsional)",
+                hintText: "1234567890",
+                controller: npwpController,
+              ),
+              const SizedBox(height: 16),
               buildTextField(
                 label: "Kata Sandi",
                 controller: passwordController,
@@ -159,7 +181,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 16),
-
               buildTextField(
                 label: "Konfirmasi Kata Sandi",
                 controller: confirmPasswordController,
@@ -178,7 +199,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 16),
-
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -212,7 +232,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ),
               const SizedBox(height: 24),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -276,7 +295,11 @@ class _RegisterPageState extends State<RegisterPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -285,7 +308,9 @@ class _RegisterPageState extends State<RegisterPage> {
             hintText: hintText,
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.black12)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.black12)),
             suffixIcon: suffixIcon,
           ),
         ),
