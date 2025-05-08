@@ -35,8 +35,8 @@ class ExcashDatabase {
     await db.execute('''
       CREATE TABLE $tableUser (
         ${UserFields.id} TEXT PRIMARY KEY,
-        ${UserFields.email} TEXT UNIQUE NOT NULL,
-        ${UserFields.fullName} TEXT UNIQUE NOT NULL,
+        ${UserFields.username} TEXT UNIQUE NOT NULL,
+        ${UserFields.fullName} TEXT NOT NULL,
         ${UserFields.businessName} TEXT NOT NULL,
         ${UserFields.businessAddress} TEXT NOT NULL,
         ${UserFields.npwp} TEXT,
@@ -69,6 +69,7 @@ class ExcashDatabase {
         ${ProductFields.description} TEXT NOT NULL,
         ${ProductFields.created_at} TEXT NOT NULL,
         ${ProductFields.updated_at} TEXT NOT NULL,
+         ${ProductFields.is_disabled} INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (${CategoryFields.id}) REFERENCES $tableUser(${UserFields.id}) ON DELETE CASCADE,
         FOREIGN KEY (${ProductFields.id_category}) REFERENCES $tableCategory(${CategoryFields.id_category}) ON DELETE CASCADE
       )
@@ -106,7 +107,7 @@ class ExcashDatabase {
     ${LogActivityFields.date} TEXT NOT NULL,
     ${LogActivityFields.type} TEXT NOT NULL,
     ${LogActivityFields.user} TEXT NOT NULL,
-    ${LogActivityFields.email} TEXT NOT NULL,
+    ${LogActivityFields.username} TEXT NOT NULL,
     ${LogActivityFields.operation} TEXT NOT NULL,
     ${LogActivityFields.oldValue} TEXT,
     ${LogActivityFields.newValue} TEXT
@@ -161,38 +162,50 @@ class ExcashDatabase {
   }
 
   //CATEGORY
-  Future<Category> create(Category category) async {
-    final db = await instance.database;
+Future<Category> create(Category category) async {
+  final db = await instance.database;
 
-    // Mendapatkan data pengguna yang sedang login
-    User? currentUser = await getCurrentUser();
-    if (currentUser == null) {
-      throw Exception("User belum login");
-    }
-
-    // ID kategori sekarang menggunakan ID pengguna yang sedang login
-    final userId = currentUser.id!;
-
-    // Menyimpan kategori ke dalam database dengan ID pengguna yang sedang login
-    final id = await db.insert(
-      tableCategory,
-      {
-        CategoryFields.id: userId, // Menggunakan ID user sebagai ID kategori
-        CategoryFields.name_category: category.name_category,
-        CategoryFields.created_at_category:
-            category.created_at_category.toIso8601String(),
-        CategoryFields.updated_at_category:
-            category.updated_at_category.toIso8601String(),
-      },
-    );
-
-    // Log aktivitas
-    await logActivity(
-        "add", currentUser.email, currentUser.fullName, "Category");
-
-    // Mengembalikan kategori yang telah dibuat dengan ID yang baru
-    return category.copy(id_category: id, id: userId);
+  // Mendapatkan data pengguna yang sedang login
+  User? currentUser = await getCurrentUser();
+  if (currentUser == null) {
+    throw Exception("User belum login");
   }
+
+  // Cek jika kategori sudah ada (case-insensitive)
+  final existingCategory = await db.query(
+    tableCategory,
+    where: 'LOWER(${CategoryFields.name_category}) = LOWER(?)',
+    whereArgs: [category.name_category],
+  );
+
+  if (existingCategory.isNotEmpty) {
+    // Jika kategori sudah ada, lempar exception atau return error
+    throw Exception("Kategori dengan nama '${category.name_category}' sudah ada.");
+  }
+
+  // ID kategori sekarang menggunakan ID pengguna yang sedang login
+  final userId = currentUser.id!;
+
+  // Menyimpan kategori ke dalam database dengan ID pengguna yang sedang login
+  final id = await db.insert(
+    tableCategory,
+    {
+      CategoryFields.id: userId, // Menggunakan ID user sebagai ID kategori
+      CategoryFields.name_category: category.name_category,
+      CategoryFields.created_at_category:
+          category.created_at_category.toIso8601String(),
+      CategoryFields.updated_at_category:
+          category.updated_at_category.toIso8601String(),
+    },
+  );
+
+  // Log aktivitas
+  await logActivity(
+      "add", currentUser.username, currentUser.fullName, "Category");
+
+  // Mengembalikan kategori yang telah dibuat dengan ID yang baru
+  return category.copy(id_category: id, id: userId);
+}
 
   Future<List<Category>> getAllCategory() async {
     final db = await instance.database;
@@ -231,7 +244,7 @@ class ExcashDatabase {
     if (currentUser != null) {
       // Menambahkan log aktivitas untuk operasi "edit"
       await logActivity(
-          "edit", currentUser.email, currentUser.fullName, "category");
+          "edit", currentUser.username, currentUser.fullName, "category");
     }
 
     return result;
@@ -240,29 +253,33 @@ class ExcashDatabase {
   Future<int> deleteCategoryById(int id) async {
     final db = await instance.database;
 
-    // Mendapatkan kategori yang akan dihapus untuk log aktivitas
-    final category = await getCategoryById(id);
+    // Check if any products are using this category ID
+    final productCount = await db.query(
+      tableProduct,
+      where: '${ProductFields.id_category} = ?',
+      whereArgs: [id],
+    );
 
-    if (category != null) {
-      // Menghapus kategori dari tabel
-      int result = await db.delete(
-        tableCategory,
-        where: '${CategoryFields.id_category} = ?',
-        whereArgs: [id],
-      );
-
-      // Mendapatkan user yang sedang login
-      User? currentUser = await getCurrentUser();
-      if (currentUser != null) {
-        // Menambahkan log aktivitas untuk operasi "delete"
-        await logActivity(
-            "delete", currentUser.email, currentUser.fullName, "category");
-      }
-
-      return result;
+    // If there are products using this category, we can't delete it
+    if (productCount.isNotEmpty) {
+      return -1; // Return -1 to indicate that the category cannot be deleted
     }
 
-    return 0; // Kategori tidak ditemukan
+    // Proceed with category deletion if no products are associated
+    final result = await db.delete(
+      tableCategory,
+      where: '${CategoryFields.id_category} = ?',
+      whereArgs: [id],
+    );
+
+    // Optionally, log the activity of category deletion (if needed)
+    User? currentUser = await getCurrentUser();
+    if (currentUser != null) {
+      await logActivity(
+          "delete", currentUser.username, currentUser.fullName, "category");
+    }
+
+    return result;
   }
 
   // PRODUCT CRUD
@@ -291,7 +308,7 @@ class ExcashDatabase {
 
     // Log aktivitas
     await logActivity(
-        "add", currentUser.email, currentUser.fullName, "product");
+        "add", currentUser.username, currentUser.fullName, "product");
 
     return newProduct;
   }
@@ -359,19 +376,40 @@ class ExcashDatabase {
     );
   }
 
+  Future<int> disableProductById(String id) async {
+    final db = await instance.database;
+
+    // Update kolom is_disabled menjadi true (1) untuk produk yang dihapus
+    int result = await db.update(
+      tableProduct,
+      {ProductFields.is_disabled: 1}, // Set is_disabled ke 1
+      where: '${ProductFields.id_product} = ?',
+      whereArgs: [id],
+    );
+
+    // Log aktivitas
+    User? currentUser = await getCurrentUser();
+    if (currentUser != null) {
+      await logActivity(
+          "delete", currentUser.username, currentUser.fullName, "product");
+    }
+
+    return result; // Mengembalikan jumlah baris yang terpengaruh
+  }
+
   // 🔹 REGISTER USER
   // 🔹 REGISTER USER
   Future<int> registerUser(User user) async {
     final db = await instance.database;
 
-    // Cek apakah email sudah digunakan
-    final existingEmailUser = await db.query(
+    // Cek apakah username sudah digunakan
+    final existingUsernameUser = await db.query(
       tableUser,
-      where: '${UserFields.email} = ?',
-      whereArgs: [user.email],
+      where: '${UserFields.username} = ?',
+      whereArgs: [user.username],
     );
-    if (existingEmailUser.isNotEmpty) {
-      throw Exception("Email sudah digunakan");
+    if (existingUsernameUser.isNotEmpty) {
+      throw Exception("Username sudah digunakan");
     }
 
     // Cek apakah fullname sudah digunakan
@@ -399,25 +437,24 @@ class ExcashDatabase {
   }
 
   // 🔹 LOGIN USER
-  Future<User?> loginUser(String fullName, String password) async {
-  final db = await instance.database;
+  Future<User?> loginUser(String username, String password) async {
+    final db = await instance.database;
 
-  final result = await db.query(
-    tableUser,
-    where: '${UserFields.fullName} = ? AND ${UserFields.password} = ?',
-    whereArgs: [fullName, password],
-  );
+    final result = await db.query(
+      tableUser,
+      where: '${UserFields.username} = ? AND ${UserFields.password} = ?',
+      whereArgs: [username, password],
+    );
 
-  if (result.isNotEmpty) {
-    print("User berhasil login: ${result.first}");
-    await ExcashDatabase.instance.getDatabaseSize();
-    return User.fromJson(result.first);
-  } else {
-    print("Login gagal: tidak ada user yang cocok.");
-    return null;
+    if (result.isNotEmpty) {
+      print("User berhasil login: ${result.first}");
+      await ExcashDatabase.instance.getDatabaseSize();
+      return User.fromJson(result.first);
+    } else {
+      print("Login gagal: tidak ada user yang cocok.");
+      return null;
+    }
   }
-}
-
 
   Future<User?> getUserById(String id) async {
     final db = await instance.database;
@@ -426,7 +463,7 @@ class ExcashDatabase {
       tableUser,
       columns: [
         UserFields.id,
-        UserFields.email,
+        UserFields.username,
         UserFields.fullName,
         UserFields.businessName,
         UserFields.businessAddress,
@@ -659,7 +696,7 @@ class ExcashDatabase {
   // Example of inserting a log activity
   Future<void> logActivity(
     String type,
-    String email,
+    String username,
     String user,
     String operation, {
     String? oldValue,
@@ -740,7 +777,7 @@ class ExcashDatabase {
       date: DateTime.now().toIso8601String(),
       type: type,
       user: user,
-      email: email,
+      username: username,
       operation: operation,
       oldValue: formattedOldValue,
       newValue: formattedNewValue,

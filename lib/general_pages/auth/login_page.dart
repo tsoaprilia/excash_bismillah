@@ -1,6 +1,7 @@
 import 'package:excash/database/excash_database.dart';
 import 'package:excash/general_pages/menu.dart';
 import 'package:excash/general_pages/auth/register_page.dart';
+import 'package:excash/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,7 +15,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool rememberMe = false;
   bool isPasswordVisible = false;
-  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   @override
@@ -24,148 +25,137 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> loadRememberedUser() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? rememberedFullName = prefs.getString('remembered_full_name');
-  String? rememberedPassword = prefs.getString('remembered_password');
-  bool? rememberMeState = prefs.getBool('remember_me') ?? false;
-  int? rememberMeTimestamp = prefs.getInt('remember_me_timestamp');
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? rememberedUsername = prefs.getString('remembered_username');
+    String? rememberedPassword = prefs.getString('remembered_password');
+    bool? rememberMeState = prefs.getBool('remember_me') ?? false;
+    int? rememberMeTimestamp = prefs.getInt('remember_me_timestamp');
 
-  if (rememberMeState == true && rememberedFullName != null && rememberedPassword != null) {
-    // Check if the "Remember Me" timestamp is older than 1 week (7 days)
-    if (rememberMeTimestamp != null) {
-      final timestampDuration = DateTime.now().millisecondsSinceEpoch - rememberMeTimestamp;
-      final oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+    if (rememberMeState == true &&
+        rememberedUsername != null &&
+        rememberedPassword != null) {
+      // Check if the "Remember Me" timestamp is older than 1 week (7 days)
+      if (rememberMeTimestamp != null) {
+        final timestampDuration =
+            DateTime.now().millisecondsSinceEpoch - rememberMeTimestamp;
+        final oneWeekInMilliseconds =
+            7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
 
-      if (timestampDuration > oneWeekInMilliseconds) {
-        setState(() {
-          rememberMe = false; // Expired, reset the flag
-        });
-        prefs.remove('remembered_full_name');
-        prefs.remove('remembered_password');
-        prefs.remove('remember_me_timestamp');
-      } else {
-        // Still within 1 week, load the credentials
-        setState(() {
-          fullNameController.text = rememberedFullName;
-          passwordController.text = rememberedPassword;
-          rememberMe = rememberMeState;
-        });
+        if (timestampDuration > oneWeekInMilliseconds) {
+          setState(() {
+            rememberMe = false; // Expired, reset the flag
+          });
+          prefs.remove('remembered_full_name');
+          prefs.remove('remembered_password');
+          prefs.remove('remember_me_timestamp');
+        } else {
+          // Still within 1 week, load the credentials
+          setState(() {
+            usernameController.text = rememberedUsername;
+            passwordController.text = rememberedPassword;
+            rememberMe = rememberMeState;
+          });
+        }
       }
     }
   }
-}
 
-
- 
-  Future<void> saveUserData(String idUser, String nameLengkap,
-    String bisnisName, String bisnisAddress, String? npwp) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.setString('id_user', idUser);
-  await prefs.setString('name_lengkap', nameLengkap);
-  await prefs.setString('bisnis_name', bisnisName);
-  await prefs.setString('bisnis_address', bisnisAddress);
-  if (npwp != null && npwp.isNotEmpty) {
-    await prefs.setString('user_npwp', npwp);
-  } else {
-    await prefs.remove('user_npwp');
-  }
-
-  // Save timestamp when Remember Me was last checked
-  if (rememberMe) {
-    await prefs.setInt('remember_me_timestamp', DateTime.now().millisecondsSinceEpoch);
-  } else {
-    await prefs.remove('remember_me_timestamp');
-  }
-}
-
-
- Future<void> loginUser() async {
-  String fullName = fullNameController.text; // rename to fullName
-  String password = passwordController.text;
-
-  // Update the login query to use fullName and password
-  final user = await ExcashDatabase.instance.loginUser(fullName, password);
-
-  if (user != null) {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_id', user.id!);
-    await prefs.setString('user_name', user.fullName);
-    await prefs.setString('user_email', user.email);
-    await prefs.setString('user_business_name', user.businessName);
-    await prefs.setString('user_business_address', user.businessAddress);
-    if (user.npwp != null && user.npwp!.isNotEmpty) {
-      await prefs.setString('user_npwp', user.npwp!);
+  Future<void> saveUserData(String idUser, String username, String fullName,
+      String bisnisName, String bisnisAddress, String? npwp) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('id_user', idUser);
+    await prefs.setString('username', username);
+    await prefs.setString('nama_lengkap', fullName);
+    await prefs.setString('bisnis_name', bisnisName);
+    await prefs.setString('bisnis_address', bisnisAddress);
+    if (npwp != null && npwp.isNotEmpty) {
+      await prefs.setString('user_npwp', npwp);
+    } else {
+      await prefs.remove('user_npwp');
     }
 
-    // Simpan data user untuk transaksi
-    await saveUserData(
-      user.id!,
-      user.fullName,
-      user.businessName,
-      user.businessAddress,
-      user.npwp,
-    );
-
+    // Save timestamp when Remember Me was last checked
     if (rememberMe) {
-      await prefs.setString('remembered_full_name', fullName); // Save fullName
-      await prefs.setString('remembered_password', password); // Save password
-      await prefs.setBool('remember_me', true); // Save rememberMe state
-      await prefs.setInt('remember_me_timestamp', DateTime.now().millisecondsSinceEpoch); // Save timestamp
+      await prefs.setInt(
+          'remember_me_timestamp', DateTime.now().millisecondsSinceEpoch);
     } else {
-      await prefs.remove('remembered_full_name');
-      await prefs.remove('remembered_password');
-      await prefs.setBool('remember_me', false); // Save rememberMe state
       await prefs.remove('remember_me_timestamp');
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Login berhasil")),
-    );
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Full Name atau password salah")),
-    );
   }
-}
 
-// Future<void> loginUser() async {
-//   String email = fullNameController.text;
-//   String password = passwordController.text;
+  Future<void> loginUser() async {
+    String username = usernameController.text; // rename to fullName
+    String password = passwordController.text;
 
-//   final user = await ExcashDatabase.instance.loginUser(email, password);
-//   if (user != null) {
-//     final SharedPreferences prefs = await SharedPreferences.getInstance();
-//     await prefs.setString('user_id', user.id!);  // Pastikan ID disimpan di sini
-//     await prefs.setString('user_name', user.fullName);
-//     await prefs.setString('user_email', user.email);
-//     await prefs.setString('user_business_name', user.businessName);
+    // Update the login query to use fullName and password
+    final user = await ExcashDatabase.instance.loginUser(username, password);
 
-//     // Simpan data user untuk transaksi
-//     await saveUserData(user.id!, user.fullName, user.businessName);
+    if (user != null) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', user.id!);
+      await prefs.setString('user_name', user.fullName);
+      await prefs.setString('user_username', user.username);
+      await prefs.setString('user_business_name', user.businessName);
+      await prefs.setString('user_business_address', user.businessAddress);
+      if (user.npwp != null && user.npwp!.isNotEmpty) {
+        await prefs.setString('user_npwp', user.npwp!);
+      }
 
-//     if (rememberMe) {
-//       await prefs.setString('remembered_email', email);
-//       await prefs.setString('remembered_password', password);
-//     } else {
-//       await prefs.remove('remembered_email');
-//       await prefs.remove('remembered_password');
-//     }
+      // Simpan data user untuk transaksi
+      await saveUserData(
+        user.id!,
+        user.fullName,
+        user.username,
+        user.businessName,
+        user.businessAddress,
+        user.npwp,
+      );
 
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text("Login berhasil")),
-//     );
-//     Navigator.pushReplacement(
-//         context, MaterialPageRoute(builder: (context) => const MainScreen()));
-//   } else {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text("Email atau password salah")),
-//     );
-//   }
-// }
+      if (rememberMe) {
+        await prefs.setBool('remember_me', true);
+        await prefs.setString('remembered_username', username);
+        await prefs.setString('remembered_password', password);
+        await prefs.setInt(
+            'remember_me_timestamp', DateTime.now().millisecondsSinceEpoch);
+      } else {
+        // Jika tidak dicentang, hapus data sebelumnya
+        await prefs.setBool('remember_me', false);
+        await prefs.remove('remembered_username');
+        await prefs.remove('remembered_password');
+        await prefs.remove('remember_me_timestamp');
+      }
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login berhasil")),
+      );
+
+      // Navigate to the main screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nama Pengguna atau password salah")),
+      );
+    }
+  }
+
+  Future<User?> _resetPassword(String username) async {
+    final db = await ExcashDatabase.instance.database;
+
+    final result = await db.query(
+      tableUser,
+      where: '${UserFields.username} = ?',
+      whereArgs: [username],
+    );
+
+    if (result.isNotEmpty) {
+      return User.fromJson(result.first);
+    } else {
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                buildTextField("Nama Pengguna", fullNameController,
+                buildTextField("Nama Pengguna", usernameController,
                     hintText: "Aprilia Dwi Cristyana"),
                 const SizedBox(height: 16),
                 buildTextField("Kata Sandi", passwordController,
@@ -244,9 +234,11 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        _showResetPasswordDialog();
+                      },
                       child: const Text(
-                        " ",
+                        "Lupa Kata Sandi",
                         style: TextStyle(
                           color: Color(0xFFD39054),
                           fontWeight: FontWeight.w500,
@@ -338,6 +330,331 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showResetPasswordDialog() {
+    final TextEditingController usernameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Icon(
+                      Icons.lock_outline,
+                      color: Color(0xFF424242),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        "Lupa Kata Sandi",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Color(0xFF424242),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Masukkan nama pengguna untuk reset kata sandi!",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF6C727F),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: usernameController,
+                  decoration: InputDecoration(
+                    hintText: 'Cth : Aprilia123@',
+                    hintStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black45, // opsional, bisa disesuaikan
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    labelText: 'Nama Pengguna',
+                    labelStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Colors.black12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 12),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      String username = usernameController.text;
+                      if (username.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Username tidak boleh kosong"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      final user = await _resetPassword(username);
+                      if (user != null) {
+                        Navigator.pop(context);
+                        _showNewPasswordDialog(user);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Pengguna tidak ditemukan"),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Color.fromARGB(255, 0, 0, 0), // Warna background
+                      foregroundColor: Colors.white, // Warna teks
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 2,
+                    ),
+                    child: const Text(
+                      "Cek Nama",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showNewPasswordDialog(User user) {
+    final TextEditingController newPasswordController = TextEditingController();
+    bool isPasswordVisible = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: Colors.white,
+          child: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Icon(
+                          Icons.lock_outline,
+                          color: Color(0xFF424242),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            "Atur Kata Sandi Baru",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: Color(0xFF424242),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 5,
+                                spreadRadius: 1,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Masukkan kata sandi baru untuk akun anda!",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF6C727F),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: newPasswordController,
+                      obscureText: !isPasswordVisible,
+                      decoration: InputDecoration(
+                        hintText: 'Cth : User123@',
+                        hintStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black45, // opsional, bisa disesuaikan
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        labelText: 'Kata Sandi Baru',
+                        labelStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Colors.black12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 12),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              isPasswordVisible = !isPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          String newPassword = newPasswordController.text;
+                          if (newPassword.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Kata sandi tidak boleh kosong"),
+                              ),
+                            );
+                            return;
+                          }
+
+                          // Update kata sandi di database
+                          final db = await ExcashDatabase.instance.database;
+                          await db.update(
+                            tableUser,
+                            {UserFields.password: newPassword},
+                            where: '${UserFields.id} = ?',
+                            whereArgs: [user.id],
+                          );
+
+                          Navigator.pop(context); // Tutup dialog
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Kata sandi berhasil diubah")),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Color.fromARGB(255, 0, 0, 0), // Warna background
+                          foregroundColor: Colors.white, // Warna teks
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          "Ubah Kata Sandi",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

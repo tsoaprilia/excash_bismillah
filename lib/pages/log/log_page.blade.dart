@@ -244,7 +244,7 @@ class _LogPageState extends State<LogPage> {
                               date: log.date,
                               type: log.type,
                               user: log.user,
-                              email: log.email,
+                              username: log.username,
                               operation: log.operation,
                               onTap: () {
                                 final log = _logs[index];
@@ -258,7 +258,7 @@ class _LogPageState extends State<LogPage> {
                                       date: log.date,
                                       type: log.type,
                                       user: log.user,
-                                      email: log.email,
+                                      username: log.username,
                                     ),
                                   ),
                                 );

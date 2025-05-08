@@ -5,7 +5,7 @@ class LogActivityFields {
   static const String date = 'date';
   static const String type = 'type';
   static const String user = 'user';
-  static const String email = 'email';
+  static const String username = 'username';
   static const String operation = 'operation';
   static const String oldValue = 'oldValue';  // Field for old value
   static const String newValue = 'newValue';  // Field for new value
@@ -16,7 +16,7 @@ class LogActivity {
   final String date;
   final String type;
   final String user;
-  final String email;
+  final String username;
   final String operation;
   final String? oldValue;
   final String? newValue;
@@ -26,7 +26,7 @@ class LogActivity {
     required this.date,
     required this.type,
     required this.user,
-    required this.email,
+    required this.username,
     required this.operation,
     this.oldValue,
     this.newValue,
@@ -37,7 +37,7 @@ class LogActivity {
     String? date,
     String? type,
     String? user,
-    String? email,
+    String? username,
     String? operation,
     String? oldValue,
     String? newValue,
@@ -47,7 +47,7 @@ class LogActivity {
         date: date ?? this.date,
         type: type ?? this.type,
         user: user ?? this.user,
-        email: email ?? this.email,
+        username: username ?? this.username,
         operation: operation ?? this.operation,
         oldValue: oldValue ?? this.oldValue,
         newValue: newValue ?? this.newValue,
@@ -58,7 +58,7 @@ class LogActivity {
         date: json[LogActivityFields.date] as String,
         type: json[LogActivityFields.type] as String,
         user: json[LogActivityFields.user] as String,
-        email: json[LogActivityFields.email] as String,
+        username: json[LogActivityFields.username] as String,
         operation: json[LogActivityFields.operation] as String,
         oldValue: json[LogActivityFields.oldValue] as String?,
         newValue: json[LogActivityFields.newValue] as String?,
@@ -69,7 +69,7 @@ class LogActivity {
         LogActivityFields.date: date,
         LogActivityFields.type: type,
         LogActivityFields.user: user,
-        LogActivityFields.email: email,
+        LogActivityFields.username: username,
         LogActivityFields.operation: operation,
         LogActivityFields.oldValue: oldValue,
         LogActivityFields.newValue: newValue,

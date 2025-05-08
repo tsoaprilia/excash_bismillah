@@ -6,7 +6,7 @@ class LogCardWidget extends StatelessWidget {
   final String date;  // Ensure this is a String representing the date
   final String type;
   final String user;
-  final String email;
+  final String username;
   final String operation; // Operasi yang dilakukan (tabel yang diubah)
   final VoidCallback onTap;
 
@@ -16,7 +16,7 @@ class LogCardWidget extends StatelessWidget {
     required this.date,
     required this.type,
     required this.user,
-    required this.email,
+    required this.username,
     required this.operation,
     required this.onTap,
   });
@@ -165,7 +165,7 @@ class LogCardWidget extends StatelessWidget {
                                 size: 6, color: Colors.black54),
                             const SizedBox(width: 6),
                             Text(
-                              email,
+                              username,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF757B7B),

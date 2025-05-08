@@ -26,33 +26,31 @@ class ImportData {
     String? currentTable = type;
     List<String>? columns;
 
-    var i = 0;
-    for (var row in csvTable) {
-      print('Row length: ${row.length}');
+    for (var i = 0; i < csvTable.length; i++) {
+      var row = csvTable[i];
       if (row.isEmpty) continue;
-      print('Row first: ${row.first}');
 
-      // Mengambil nama kolom dari baris pertama CSV
       if (i == 0) {
         columns = row.sublist(1).cast<String>(); // Ambil nama kolom
-        print('Checkpoint 1: $columns');
-      } else if (columns != null) {
-        print('Columns not null $columns');
+        print('CSV Headers: $columns');
+      } else {
         Map<String, dynamic> data = {};
-        for (int i = 0; i < columns.length; i++) {
-          data[columns[i]] = row[i] ?? '';
-          print('column $i: ${data[columns[i]]}');
+        for (int j = 0; j < columns!.length; j++) {
+          data[columns[j]] = row[j];
         }
-        print('current table: $currentTable');
+
+        print('Inserting $currentTable: $data');
 
         if (currentTable == 'users') {
           if (row.length >= 6) {
             data[UserFields.id] = row[0]; // Generate UUID jika tidak ada
-            data[UserFields.email] = row[1];
+            data[UserFields.username] = row[1];
             data[UserFields.fullName] = row[2];
             data[UserFields.businessName] = row[3];
-            data[UserFields.password] = row[4];
-            data[UserFields.image] = row[5] ?? 'N/A';
+            data[UserFields.businessAddress] = row[4];
+            data[UserFields.npwp] = row[5];
+            data[UserFields.password] = row[6];
+            data[UserFields.image] = row[7] ?? 'N/A';
 
             // Menambahkan data ke tabel 'users', jika email sudah ada, maka data baru akan diabaikan
             print('Inserting user data: $data'); // Debugging log
@@ -89,6 +87,8 @@ class ImportData {
             data[ProductFields.description] = row[7];
             data[ProductFields.created_at] = row[8];
             data[ProductFields.updated_at] = row[9];
+            data[ProductFields.is_disabled] = row[10];
+
             print('Inserting product: $data'); // Debugging log
             await db.insert(currentTable!, data,
                 conflictAlgorithm: ConflictAlgorithm.replace);

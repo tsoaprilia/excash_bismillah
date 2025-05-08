@@ -19,9 +19,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String _userName = "Nama Pengguna";
-  String _userEmail = "Email Pengguna";
+  String _userEmail = "Full Pengguna";
   String _userbusinessName = "Nama Bisnis";
-  String _profileImage = 'assets/img/profile.png';
+  String _profileImage = 'assets/img/profile.jpg';
 
   @override
   void initState() {
@@ -44,7 +44,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _userbusinessName =
           prefs.getString('user_business_name') ?? "Nama Bisnis";
       _profileImage =
-          prefs.getString('user_profile_image') ?? 'assets/img/profile.png';
+          prefs.getString('user_profile_image') ?? 'assets/img/profile.jpg';
     });
   }
 

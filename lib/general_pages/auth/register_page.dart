@@ -15,7 +15,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
 
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController businessNameController = TextEditingController();
   final TextEditingController businessAddressController =
@@ -32,6 +32,13 @@ class _RegisterPageState extends State<RegisterPage> {
     return passwordRegExp.hasMatch(password);
   }
 
+  // Fungsi untuk validasi format username
+  bool isValidUsername(String username) {
+    final RegExp usernameRegExp = RegExp(
+        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$');
+    return usernameRegExp.hasMatch(username);
+  }
+
   Future<void> registerUser() async {
     if (!agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -42,7 +49,7 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    String email = emailController.text;
+    String username = usernameController.text;
     String fullName = fullNameController.text;
     String businessName = businessNameController.text;
     String businessAddress = businessAddressController.text;
@@ -75,9 +82,18 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       return;
     }
+    if (!isValidUsername(username)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              "Username harus mengandung huruf besar, huruf kecil, angka, dan simbol."),
+        ),
+      );
+      return;
+    }
 
     final newUser = User(
-      email: email,
+      username: username,
       fullName: fullName,
       businessName: businessName,
       businessAddress: businessAddress,
@@ -136,13 +152,13 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 24),
               buildTextField(
-                label: "Email",
-                hintText: "aprilia@gmail.com",
-                controller: emailController,
+                label: "Nama Pengguna",
+                hintText: "Aprilia123@",
+                controller: usernameController,
               ),
               const SizedBox(height: 16),
               buildTextField(
-                label: "Nama Pengguna",
+                label: "Nama Lengkap",
                 hintText: "Aprilia Dwi Cristyana",
                 controller: fullNameController,
               ),

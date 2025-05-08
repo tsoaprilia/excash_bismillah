@@ -6,10 +6,12 @@ class CategoryFormWidget extends StatefulWidget {
     super.key,
     required this.nameCategory,
     required this.onChangeNameCategory,
+    this.nameCategoryError,
   });
 
   final String nameCategory;
   final ValueChanged<String> onChangeNameCategory;
+  final String? nameCategoryError;
 
   @override
   _CategoryFormWidgetState createState() => _CategoryFormWidgetState();
@@ -80,6 +82,7 @@ class _CategoryFormWidgetState extends State<CategoryFormWidget> {
           ),
         ),
         hintText: 'Nama Kategori Produk',
+        errorText: widget.nameCategoryError,
         hintStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w400,

@@ -51,7 +51,8 @@ class ProductData {
         'stock',
         'description',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'is_disabled'
       ]);
 
       for (var row in products) {
@@ -65,7 +66,8 @@ class ProductData {
           row['stock'],
           row['description'],
           row['created_at'],
-          row['updated_at']
+          row['updated_at'],
+          row['is_disabled']
         ]);
       }
     }

@@ -96,6 +96,7 @@ class _ImporPageState extends State<ImporPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Data berhasil diimpor!")),
     );
+    Navigator.pop(context, true); 
   }
 
   // Print functions
@@ -106,9 +107,11 @@ class _ImporPageState extends State<ImporPage> {
     if (users.isNotEmpty) {
       users.forEach((user) {
         print("ID: ${user['id']}");
-        print("Email: ${user['email']}");
+        print("Username: ${user['username']}");
         print("Full Name: ${user['full_name']}");
         print("Business Name: ${user['business_name']}");
+        print("Business Address: ${user['business_address']}");
+        print("NPWP: ${user['npwp']}");
         print("Password: ${user['password']}");
         print("Image: ${user['image'] ?? 'N/A'}");
         print("------------------------------");
@@ -154,6 +157,8 @@ class _ImporPageState extends State<ImporPage> {
         print("Description: ${product['description']}");
         print("Created At: ${product['created_at']}");
         print("Updated At: ${product['updated_at']}");
+        print("Disabled: ${product['is_disabled']}");
+
         print("------------------------------");
       });
     } else {

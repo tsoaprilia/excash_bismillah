@@ -6,6 +6,34 @@ import 'package:excash/main.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
+
+String encryptPassword(String password) {
+  // Original key string (ensure this is at least 32 characters)
+  String keyString =
+      '32charslongkey1234567890123456'; // Make sure this is exactly 32 characters
+
+  // Pad the key if it's less than 32 characters
+  keyString = keyString.padRight(32, '0'); // Adds '0' at the end if needed
+
+  // Print key length for debugging
+  print('Key Length: ${keyString.length}');
+
+  if (keyString.length != 32) {
+    throw ArgumentError('Key length must be exactly 32 characters.');
+  }
+
+  final key = encrypt.Key.fromUtf8(keyString); // Create AES key
+  final iv = encrypt.IV.fromLength(16); // AES requires 16 bytes IV
+
+  final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+  // Encrypt the password
+  final encrypted = encrypter.encrypt(password, iv: iv);
+
+  // Return the encrypted password in base64 format
+  return encrypted.base64;
+}
 
 class UserData {
   Future<void> exportToCSV() async {
@@ -41,15 +69,25 @@ class UserData {
     List<Map<String, dynamic>> users = await db.query('users');
     if (users.isNotEmpty) {
       csvData.add([]); // Baris kosong pemisah antar tabel
-      csvData.add(
-          ['id', 'email', 'full_name', 'business_name', 'password', 'image']);
+      csvData.add([
+        'id',
+        'username',
+        'full_name',
+        'business_name',
+        'business_address',
+        'npwp',
+        'password',
+        'image'
+      ]);
       for (var row in users) {
         csvData.add([
           row['id'],
-          row['email'],
+          row['username'],
           row['full_name'],
           row['business_name'],
-          row['password'],
+          row['business_address'],
+          row['npwp'],
+          encryptPassword(row['password']),
           row['image'] ?? ''
         ]);
       }

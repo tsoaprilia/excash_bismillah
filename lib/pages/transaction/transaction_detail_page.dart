@@ -45,7 +45,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   Future<List<Map<String, dynamic>>> fetchOrderDetails(int orderId) async {
     final db = await ExcashDatabase.instance.database;
     return await db.rawQuery('''
-    SELECT od.*, p.name_product AS nama_produk, p.price AS harga_satuan
+    SELECT od.*, p.name_product AS nama_produk, p.selling_price AS harga_satuan
     FROM $tableOrderDetail od
     JOIN $tableProduct p ON od.id_product = p.id_product
     WHERE od.id_order = ?
@@ -98,7 +98,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         printer.printCustom('Id Transaksi: ${orderData.id_order}', 1, 0);
         printer.printCustom(
             'Waktu   : ${formatTanggal(orderData.created_at)}', 1, 0);
-        printer.printCustom('Kasir: ${userData.fullName}', 1, 0);
+        printer.printCustom('Kasir: ${userData.username}', 1, 0);
 
         printer.printCustom('--------------------------------', 1, 1);
         printer.printNewLine();
@@ -375,7 +375,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                           Text("Toko ${userData.businessName}",
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold)),
-                          Text("Kasir: ${userData.fullName}"),
+                          Text("Kasir: ${userData.username}"),
                           Text(
                               "Tanggal Transaksi: ${formatTanggal(orderData.created_at)}"),
                           const Divider(),
@@ -469,7 +469,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text("Rp ${fRp(detail['subtotal'].toInt())}"), // Subtotal
+          child: Text(
+              "Rp ${fRp((detail['quantity'] * detail['harga_satuan']).toInt())}"), // Subtotal
         ),
       ],
     );

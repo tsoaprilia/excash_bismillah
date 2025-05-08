@@ -1,6 +1,8 @@
 import 'package:excash/general_pages/auth/login_page.dart';
 import 'package:excash/general_pages/auth/register_page.dart';
+import 'package:excash/general_pages/menu.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -10,6 +12,23 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
+  @override
+  void initState() {
+    super.initState();
+    checkUserSession();
+  }
+
+  Future<void> checkUserSession() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('user_id'); // Check if user_id exists
+    if (userId != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +41,7 @@ class _AuthPageState extends State<AuthPage> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5), // Efek gelap pada gambar
+              color: Colors.black.withOpacity(0.5), // Dark effect on the image
             ),
           ),
           Column(

@@ -2,7 +2,7 @@ const String tableUser = 'users';
 
 class UserFields {
   static const String id = 'id';
-  static const String email = 'email';
+  static const String username = 'username';
   static const String fullName = 'full_name';
   static const String businessName = 'business_name';
   static const String password = 'password';
@@ -13,7 +13,7 @@ class UserFields {
 
 class User {
   final String? id;
-  final String email;
+  final String username;
   final String fullName;
   final String businessName;
   final String password;
@@ -23,7 +23,7 @@ class User {
 
   User({
     this.id,
-    required this.email,
+    required this.username,
     required this.fullName,
     required this.businessName,
     required this.password,
@@ -34,7 +34,7 @@ class User {
 
   User copy({
     String? id,
-    String? email,
+    String? username,
     String? fullName,
     String? businessName,
     String? password,
@@ -44,7 +44,7 @@ class User {
   }) =>
       User(
         id: id ?? this.id,
-        email: email ?? this.email,
+        username: username ?? this.username,
         fullName: fullName ?? this.fullName,
         businessName: businessName ?? this.businessName,
         password: password ?? this.password,
@@ -55,7 +55,7 @@ class User {
 
   static User fromJson(Map<String, Object?> json) => User(
         id: json[UserFields.id] as String?,
-        email: json[UserFields.email] as String,
+        username: json[UserFields.username] as String,
         fullName: json[UserFields.fullName] as String,
         businessName: json[UserFields.businessName] as String,
         password: json[UserFields.password] as String,
@@ -66,7 +66,7 @@ class User {
 
   Map<String, Object?> toJson() => {
         UserFields.id: id,
-        UserFields.email: email,
+        UserFields.username: username,
         UserFields.fullName: fullName,
         UserFields.businessName: businessName,
         UserFields.password: password,

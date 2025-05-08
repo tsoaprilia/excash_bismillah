@@ -34,6 +34,7 @@ dependencies:
   showcaseview: ^4.0.1
   flutter_multi_formatter: ^2.13.7
   pie_chart: ^5.4.0
+  encrypt: ^5.0.3
 
 dev_dependencies:
   flutter_test:
@@ -52,7 +53,7 @@ flutter:
   - assets/img/excash_logo.png
   - assets/img/auth.png
   - assets/img/excash_logo_hitam.png
-  - assets/img/profile.png
+  - assets/img/profile.jpg
   - assets/img/confirm.png
   - assets/img/excash_logo2.png
   - assets/img/launch.png

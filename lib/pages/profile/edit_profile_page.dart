@@ -13,10 +13,11 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController businessNameController = TextEditingController();
-   final TextEditingController businessAddressController = TextEditingController();
+  final TextEditingController businessAddressController =
+      TextEditingController();
   final TextEditingController npwpController = TextEditingController();
   File? _image;
   String? userId;
@@ -36,10 +37,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final user = await ExcashDatabase.instance.getUserById(userId!);
       if (user != null) {
         setState(() {
-          emailController.text = user.email;
+          usernameController.text = user.username;
           fullNameController.text = user.fullName;
           businessNameController.text = user.businessName;
-           businessAddressController.text = user.businessAddress;
+          businessAddressController.text = user.businessAddress;
           npwpController.text = user.npwp ?? '';
           password = user.password;
           if (user.image != null) {
@@ -65,10 +66,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     final updatedUser = User(
       id: userId,
-      email: emailController.text,
+      username: usernameController.text,
       fullName: fullNameController.text,
       businessName: businessNameController.text,
-            businessAddress: businessAddressController.text,
+      businessAddress: businessAddressController.text,
       npwp: npwpController.text.isEmpty ? null : npwpController.text,
       password: password ?? '',
       image: _image?.path ?? 'default.png',
@@ -77,10 +78,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     await ExcashDatabase.instance.updateUser(updatedUser);
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('user_email', updatedUser.email);
+    prefs.setString('user_username', updatedUser.username);
     prefs.setString('user_name', updatedUser.fullName);
     prefs.setString('user_business_name', updatedUser.businessName);
-     await prefs.setString('user_business_address', updatedUser.businessAddress);
+    await prefs.setString('user_business_address', updatedUser.businessAddress);
     if (updatedUser.npwp != null) {
       await prefs.setString('user_npwp', updatedUser.npwp!);
     } else {
@@ -180,13 +181,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
             const SizedBox(height: 16),
-            buildTextField("Email", emailController),
+            buildTextField("Nama Pengguna", usernameController),
             const SizedBox(height: 16),
             buildTextField("Nama Lengkap", fullNameController),
             const SizedBox(height: 16),
             buildTextField("Nama Usaha", businessNameController),
             const SizedBox(height: 24),
-               buildTextField("Alamat Usaha", businessAddressController),
+            buildTextField("Alamat Usaha", businessAddressController),
             const SizedBox(height: 16),
             buildTextField("NPWP (Opsional)", npwpController),
             const SizedBox(height: 24),

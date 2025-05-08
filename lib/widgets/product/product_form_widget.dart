@@ -28,6 +28,7 @@ class ProductFormWidget extends StatefulWidget {
   final ValueChanged<String> onDescriptionChanged;
     final bool isEditMode;
   // final VoidCallback onPickImage;
+  final String? nameCategoryError;
 
   const ProductFormWidget({
     super.key,
@@ -49,6 +50,7 @@ class ProductFormWidget extends StatefulWidget {
     required this.onDescriptionChanged,
      required this.isEditMode,
     // required this.onPickImage,
+     this.nameCategoryError, 
   });
 
   @override
@@ -171,6 +173,7 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
             label: 'Nama Produk',
             controller: _nameController,
             onChanged: widget.onNameChanged,
+            errorText: widget.nameCategoryError
           ),
           _buildCategoryDropdown(),
           _buildTextField(
@@ -206,6 +209,7 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
     required String label,
     required TextEditingController controller,
     required ValueChanged<String> onChanged,
+    String? errorText,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     bool enabled = true,
@@ -259,6 +263,7 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
                   color: Color(0xFFD39054), width: 2), // Border aktif
             ),
             labelText: label,
+            errorText: errorText,
           ),
           onChanged: onChanged,
           keyboardType: keyboardType,
@@ -322,3 +327,4 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
     );
   }
 }
+

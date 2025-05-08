@@ -50,7 +50,10 @@ class _ProductPageState extends State<ProductPage> {
         "#ff6666", "Cancel", true, ScanMode.BARCODE);
 
     if (barcodeScanRes != "-1") {
-      _filterProducts(barcodeScanRes); // filter langsung
+      setState(() {
+        searchController.text = barcodeScanRes;
+      });
+      _filterProducts(barcodeScanRes);
     }
   }
 
@@ -64,19 +67,22 @@ class _ProductPageState extends State<ProductPage> {
       final categoryMatch = _selectedCategory == "Semua"
           ? true
           : product.id_category == selectedCategoryId;
-      return (nameMatch || idMatch) && categoryMatch;
+      return (nameMatch || idMatch) && categoryMatch && !product.is_disabled;
     }).toList();
   }
 
   Future<void> _refreshProducts() async {
-    setState(() => _isLoading = true); // Set loading untuk memberi indikasi
-    _products =
-        await ExcashDatabase.instance.getAllProducts(); // Memuat ulang produk
-    _categories =
-        await ExcashDatabase.instance.getAllCategory(); // Memuat kategori
-    filteredProducts = _products; // Update data produk yang terfilter
-    setState(() =>
-        _isLoading = false); // Hentikan loading setelah data selesai diambil
+    setState(() => _isLoading = true);
+    _products = await ExcashDatabase.instance.getAllProducts();
+    _categories = await ExcashDatabase.instance.getAllCategory();
+
+    _categoryMap = {
+      for (var category in _categories)
+        category.name_category: category.id_category ?? 0,
+    };
+
+    filteredProducts = _products;
+    setState(() => _isLoading = false);
   }
 
 // Fungsi untuk menambah atau mengurangi stok
@@ -92,24 +98,29 @@ class _ProductPageState extends State<ProductPage> {
     });
   }
 
-  Future<void> _saveUpdatedStocks() async {
+// Fungsi untuk menyimpan perubahan stok
+  void _saveUpdatedStocks() async {
     try {
       for (var product in _products) {
         final newStock = _productStocks[product.id_product] ?? product.stock;
         if (newStock != product.stock) {
           await ExcashDatabase.instance.updateProductStock(
-            product.id_product, // id_product tetap sebagai String
+            product.id_product,
             newStock,
           );
         }
       }
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Stok produk berhasil disimpan!"),
       ));
+
       setState(() {
         _hasStockChanges = false; // Reset perubahan stok setelah disimpan
       });
-      _refreshProducts(); // Refresh produk setelah menyimpan stok baru
+
+      // Setelah stok disimpan, kita tidak perlu kembali ke Home, cukup perbarui data.
+      _refreshProducts(); // Refresh data setelah stok disimpan
     } catch (e) {
       print("Error updating stock: $e");
     }
@@ -286,6 +297,52 @@ class _ProductPageState extends State<ProductPage> {
                   ),
                 ),
               ],
+            ),
+            SizedBox(height: 10),
+            SizedBox(
+              height: 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: ['Semua', ..._categories.map((e) => e.name_category)]
+                    .length,
+                itemBuilder: (context, index) {
+                  final categoryList = [
+                    'Semua',
+                    ..._categories.map((e) => e.name_category)
+                  ];
+                  final category = categoryList[index];
+                  final isSelected = category == _selectedCategory;
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedCategory = category;
+                        _filterProducts(searchController
+                            .text); // Filter saat kategori dipilih
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.black : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.black, width: 1),
+                      ),
+                      child: Center(
+                        child: Text(
+                          category,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 10),
             Row(

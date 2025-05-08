@@ -1,4 +1,5 @@
 import 'package:excash/database/excash_database.dart';
+import 'package:excash/general_pages/menu.dart';
 import 'package:excash/models/excash.dart';
 import 'package:excash/widgets/Ketegori_form_widget.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
   late String _nameCategory;
   late bool _isUpdateForm;
   String? _Id;
+  String? _nameCategoryError;
 
   @override
   void initState() {
@@ -75,8 +77,14 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
                   key: _formKey,
                   child: CategoryFormWidget(
                     nameCategory: _nameCategory,
-                    onChangeNameCategory: (value) =>
-                        setState(() => _nameCategory = value),
+                    onChangeNameCategory: (value) {
+                      setState(() {
+                        _nameCategory = value;
+                        _nameCategoryError =
+                            null; // Reset error saat input berubah
+                      });
+                    },
+                    nameCategoryError: _nameCategoryError, // Tambahkan ini
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -139,7 +147,7 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
       child: ElevatedButton(
         onPressed: () async {
           if (_formKey.currentState!.validate()) {
-            final userId = await _getUserId(); // Ambil userId
+            final userId = await _getUserId();
 
             if (userId == null) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -148,13 +156,25 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
               return;
             }
 
-            if (_isUpdateForm) {
-              await _updateCategory(); // Update kategori jika sudah ada
-            } else {
-              await _addCategory(userId); // Tambah kategori baru jika belum ada
+            try {
+              if (_isUpdateForm) {
+                await _updateCategory(); // Mengupdate kategori yang ada
+                Navigator.pop(context); // Tutup halaman setelah update
+              } else {
+                // Cek jika kategori berhasil ditambahkan
+                await _addCategory(userId);
+                if (_nameCategoryError == null) {
+                  Navigator.pop(
+                      context); // Tutup halaman hanya jika tidak ada error
+                }
+              }
+            } catch (e) {
+              print('Error saat menambahkan kategori: $e');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Terjadi kesalahan saat menyimpan kategori')),
+              );
             }
-
-            Navigator.pop(context);
           }
         },
         style: ElevatedButton.styleFrom(
@@ -177,17 +197,45 @@ class _AddEditCategoryPageState extends State<AddEditCategoryPage> {
   }
 
   // Menambahkan kategori baru
+  // Setelah berhasil menambah kategori, pastikan menggunakan pushReplacement
   Future<void> _addCategory(String userId) async {
     final category = Category(
-      id: userId, // Gunakan ID yang diambil dari _getUserId()
+      id: userId,
       name_category: _nameCategory,
       created_at_category: DateTime.now(),
       updated_at_category: DateTime.now(),
     );
-    await ExcashDatabase.instance.create(category);
+
+    try {
+      await ExcashDatabase.instance.create(category);
+      // Jika berhasil, reset error
+      setState(() {
+        _nameCategoryError = null;
+      });
+
+      // Ganti halaman dengan pushReplacement setelah berhasil
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const MainScreen(initialIndex: 3),
+        ), // Ganti dengan halaman yang sesuai
+      );
+    } catch (e) {
+      // Tampilkan pesan error jika terjadi kesalahan
+      setState(() {
+        _nameCategoryError = e.toString().contains("sudah ada")
+            ? "Kategori dengan nama '${_nameCategory}' sudah ada."
+            : "Terjadi kesalahan saat menyimpan kategori.";
+      });
+      // Pesan kesalahan di UI
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_nameCategoryError!)),
+      );
+    }
   }
 
   // Mengupdate kategori yang sudah ada
+
   Future<void> _updateCategory() async {
     final updatedCategory = widget.category!.copy(
       id: widget.category!.id, // Tambahkan ini jika `id` wajib saat update

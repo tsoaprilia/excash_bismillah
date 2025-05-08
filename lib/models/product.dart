@@ -11,6 +11,7 @@ class ProductFields {
   static const String description = 'description';
   static const String created_at = 'created_at';
   static const String updated_at = 'updated_at';
+  static const String is_disabled = 'is_disabled';
 }
 
 class Product {
@@ -24,6 +25,7 @@ class Product {
   final String description;
   final DateTime created_at;
   final DateTime updated_at;
+  final bool is_disabled;
 
   Product({
     required this.id_product,
@@ -36,6 +38,7 @@ class Product {
     required this.description,
     required this.created_at,
     required this.updated_at,
+    required this.is_disabled,
   });
 
   get category => null;
@@ -53,6 +56,7 @@ class Product {
         ProductFields.description: description,
         ProductFields.created_at: created_at.toIso8601String(),
         ProductFields.updated_at: updated_at.toIso8601String(),
+        ProductFields.is_disabled: is_disabled ? 1 : 0,
       };
 
   static Product fromJson(Map<String, dynamic> json) => Product(
@@ -70,6 +74,7 @@ class Product {
         description: json[ProductFields.description],
         created_at: DateTime.parse(json[ProductFields.created_at]),
         updated_at: DateTime.parse(json[ProductFields.updated_at]),
+        is_disabled: json[ProductFields.is_disabled] == 1,
       );
 
   Product copy({
@@ -83,6 +88,7 @@ class Product {
     String? description,
     DateTime? created_at,
     DateTime? updated_at,
+    bool? is_disabled,
   }) =>
       Product(
         id_product: id_product ?? this.id_product,
@@ -95,5 +101,6 @@ class Product {
         description: description ?? this.description,
         created_at: created_at ?? this.created_at,
         updated_at: updated_at ?? this.updated_at,
+        is_disabled: is_disabled ?? this.is_disabled,
       );
 }

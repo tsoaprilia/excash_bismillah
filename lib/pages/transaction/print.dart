@@ -54,6 +54,9 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
       await FlutterBluePlus.turnOn();
       _showSnackbar("Bluetooth dinyalakan");
       setState(() => _isBluetoothOn = true);
+
+      // Refresh the devices list after turning Bluetooth on
+      await _initBluetooth(); // Reload the paired devices immediately
     } else {
       await FlutterBluePlus.turnOff();
       _showSnackbar("Bluetooth dimatikan");
@@ -253,18 +256,15 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: Colors.black), // Default border
+              borderSide: const BorderSide(color: Colors.black),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: Colors.black), // Border normal
+              borderSide: const BorderSide(color: Colors.black),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                  color: Color(0xFFD39054), width: 2), // Border aktif
+              borderSide: const BorderSide(color: Color(0xFFD39054), width: 2),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -276,16 +276,15 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
               child: Text(
                 device.name ?? "Unknown",
                 style: const TextStyle(
-                  fontSize: 14, // Ukuran teks input lebih kecil
-                  fontWeight:
-                      FontWeight.w500, // Medium agar mirip dengan gambar
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                   color: Colors.black,
                 ),
               ),
             );
           }).toList(),
           onChanged: (device) => setState(() => _selectedDevice = device),
-        ),
+        )
       ],
     );
   }

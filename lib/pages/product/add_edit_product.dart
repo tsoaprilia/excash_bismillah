@@ -31,6 +31,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   late String? _selectedCategory;
   // File? _image;
   late bool _isUpdateForm;
+  bool _isDisabled = false;
+
+  String? _nameCategoryError;
 
   @override
   @override
@@ -47,6 +50,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _selectedCategory = widget.product?.id_category != null
         ? widget.product!.id_category.toString()
         : null;
+    _isDisabled = widget.product?.is_disabled ?? false;
   }
 
   Future<String?> _getUserId() async {
@@ -142,6 +146,22 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         return;
       }
 
+      // Cek apakah nama produk sudah ada
+      final db = await ExcashDatabase.instance.database;
+      final existingProduct = await db.query(
+        tableProduct,
+        where: '${ProductFields.name_product} = ?',
+        whereArgs: [_name],
+      );
+
+      if (existingProduct.isNotEmpty) {
+        setState(() {
+          _nameCategoryError =
+              "Produk dengan nama '$_name' sudah ada"; // Menampilkan pesan error
+        });
+        return; // Hentikan proses penyimpanan jika nama produk sudah ada
+      }
+
       final newProduct = Product(
         id_product: _idProduct.isNotEmpty
             ? _idProduct
@@ -157,6 +177,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         created_at: DateTime.now(),
         updated_at: DateTime.now(),
         id: userId!, // Assign userId yang didapat dari SharedPreferences
+        is_disabled: false, // Default to false if not set
       );
 
       if (_isUpdateForm) {
@@ -164,8 +185,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       } else {
         await ExcashDatabase.instance.createProduct(newProduct);
       }
-      await widget.refreshProducts();
 
+      await widget.refreshProducts();
       Navigator.pop(context); // Tutup halaman setelah menyimpan
     }
   }
@@ -198,6 +219,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                           idProduct: _idProduct,
                           idProductController: _idProductController,
                           name: _name,
+                          nameCategoryError: _nameCategoryError,
                           category: _selectedCategory,
                           price: _price,
                           sellingPrice: _sellingPrice,
@@ -221,6 +243,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                               setState(() => _description = value),
                           // onPickImage: _pickImage,
                         ),
+                        const SizedBox(height: 20),
                         const SizedBox(height: 20),
                         _buildScanButton(),
                         const SizedBox(height: 10),
@@ -246,7 +269,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             Icon(Icons.add_shopping_cart, color: Color(0xFF1E1E1E)),
             SizedBox(width: 8),
             Text(
-              _isUpdateForm ? "Edit Produk: $_name" : "Tambah Produk",
+              _isUpdateForm ? "Edit Produk" : "Tambah Produk",
               style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

@@ -316,7 +316,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     // Daftar warna sesuai jumlah kategori
     final colorList = [
-      Color(0xFF8C5C30), // Warna tua banget (shade)
+      Color.fromARGB(255, 122, 76, 32), // Warna tua banget (shade)
       Color.fromARGB(255, 183, 118, 57), // Warna agak tua
       Color(0xFFD39054), // Warna utama
       Color.fromARGB(201, 248, 206, 166), // Warna sangat muda

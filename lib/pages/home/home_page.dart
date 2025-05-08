@@ -38,8 +38,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
     _refreshProducts();
+
+    _loadUserData();
 
     // Tambahkan focus listener untuk menyegarkan data ketika halaman mendapat fokus kembali
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -78,7 +79,7 @@ class _HomePageState extends State<HomePage> {
     _refreshProducts();
   }
 
-  Future<void> _refreshProducts() async {
+  void _refreshProducts() async {
     setState(() => _isLoading = true);
     try {
       final categoriesData = await ExcashDatabase.instance.getAllCategory();
@@ -92,10 +93,13 @@ class _HomePageState extends State<HomePage> {
 
       final products = await ExcashDatabase.instance.getAllProducts();
 
+      // Filter out disabled products here
+      final activeProducts =
+          products.where((product) => !product.is_disabled).toList();
+
       setState(() {
-        _products = products;
-        filteredProducts =
-            products; // 🛠️ Tambahkan ini supaya semua produk langsung tampil
+        _products = activeProducts; // Use only active products
+        filteredProducts = activeProducts; // Update filteredProducts
         _categories = categories.toList()..sort();
         _isLoading = false;
       });
@@ -139,17 +143,15 @@ class _HomePageState extends State<HomePage> {
         // Match barcode scan result with product ID
         final idMatch =
             product.id_product.toLowerCase().contains(query.toLowerCase());
-
-        // Also include matching product names if necessary
         final nameMatch =
             product.name_product.toLowerCase().contains(query.toLowerCase());
-
-        // Match category if selected
         final categoryMatch = _selectedCategory == "Semua"
             ? true
             : product.id_category == _categoryMap[_selectedCategory];
 
-        return (idMatch || nameMatch) && categoryMatch;
+        return (nameMatch || idMatch) &&
+            categoryMatch &&
+            !product.is_disabled; // Exclude disabled products
       }).toList();
 
       // Log the filtered products for verification
@@ -170,7 +172,9 @@ class _HomePageState extends State<HomePage> {
       final categoryMatch = _selectedCategory == "Semua"
           ? true
           : product.id_category == selectedCategoryId;
-      return (nameMatch || idMatch) && categoryMatch;
+      return (nameMatch || idMatch) &&
+          categoryMatch &&
+          !product.is_disabled; // Exclude disabled products
     }).toList();
   }
 
@@ -201,7 +205,7 @@ class _HomePageState extends State<HomePage> {
         0,
         (sum, item) =>
             sum +
-            (item['product'].price *
+            (item['product'].selling_price *
                 item['quantity'])); // 🟢 Ditambahkan: Hitung total harga
   }
 
@@ -398,7 +402,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 10),
-            
+
             SizedBox(
               height: 40,
               child: ListView.builder(
@@ -412,7 +416,8 @@ class _HomePageState extends State<HomePage> {
                     onTap: () {
                       setState(() {
                         _selectedCategory = category;
-                        
+                        _filterProducts(searchController
+                            .text); // 🟢 Tambahkan ini agar filter diperbarui
                       });
                     },
                     child: Container(

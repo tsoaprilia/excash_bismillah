@@ -20,7 +20,7 @@ class _ExportPageState extends State<ExportPage> {
   bool isOrderSelected = false;
   bool isOrderDetailSelected = false;
 
-  final categoryData= CategoryData(); // kategori
+  final categoryData = CategoryData(); // kategori
   final productData = ProductData(); // produk
   final userData = UserData(); // user
   final orderData = OrderData(); // order
@@ -33,7 +33,8 @@ class _ExportPageState extends State<ExportPage> {
         !isOrderSelected &&
         !isOrderDetailSelected) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Silakan pilih minimal satu data untuk diekspor!")),
+        const SnackBar(
+            content: Text("Silakan pilih minimal satu data untuk diekspor!")),
       );
       return;
     }
@@ -55,7 +56,9 @@ class _ExportPageState extends State<ExportPage> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Data berhasil diekspor!")),
+      const SnackBar(
+          content:
+              Text("Data berhasil diekspor dan disimpan di folder Unduh.")),
     );
   }
 

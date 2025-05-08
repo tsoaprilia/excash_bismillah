@@ -8,7 +8,7 @@ class LogDetailPage extends StatefulWidget {
   final String date;
   final String type;
   final String user;
-  final String email;
+  final String username;
 
   const LogDetailPage({
     super.key,
@@ -16,7 +16,7 @@ class LogDetailPage extends StatefulWidget {
     required this.date,
     required this.type,
     required this.user,
-    required this.email,
+    required this.username,
   });
 
   @override
@@ -115,7 +115,7 @@ class _LogDetailPageState extends State<LogDetailPage> {
                   const Divider(),
                   _buildRow("Username User", _logDetail!.user),
                   const Divider(),
-                  _buildRow("Email", _logDetail!.email),
+                  _buildRow("Username", _logDetail!.username),
                   const Divider(),
                   const SizedBox(height: 12),
                   const Text(
