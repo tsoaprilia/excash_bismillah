@@ -1,4 +1,5 @@
 import 'package:excash/database/excash_database.dart';
+import 'package:excash/general_pages/auth/forgotpassword_page.dart';
 import 'package:excash/general_pages/menu.dart';
 import 'package:excash/general_pages/auth/register_page.dart';
 import 'package:excash/models/user.dart';
@@ -235,7 +236,11 @@ class _LoginPageState extends State<LoginPage> {
                     const Spacer(),
                     GestureDetector(
                       onTap: () {
-                        _showResetPasswordDialog();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ForgotPasswordPage()),
+                        );
                       },
                       child: const Text(
                         "Lupa Kata Sandi",

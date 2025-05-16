@@ -43,7 +43,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return {
       'id': prefs.getString('id') ?? 'unknown',
-      'name_lengkap': prefs.getString('name_lengkap') ?? "",
+      'user_username': prefs.getString('user_username') ?? "",
       'bisnis_name': prefs.getString('bisnis_name') ?? "",
       'bisnis_address': prefs.getString('bisnis_address') ?? "",
       'user_npwp': prefs.getString('user_npwp') ?? "",
@@ -215,7 +215,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                     const Text("Kasir:",
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(userData['name_lengkap'],
+                    Text(userData['user_username'],
                         style: const TextStyle(fontSize: 18)),
                   ],
                 ),

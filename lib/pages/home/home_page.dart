@@ -66,7 +66,7 @@ class _HomePageState extends State<HomePage> {
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _userName = prefs.getString('user_name') ?? "Nama Pengguna";
+      _userName = prefs.getString('user_username') ?? "Nama Pengguna";
       _userEmail = prefs.getString('user_email') ?? "Email Pengguna";
       _userbusinessName =
           prefs.getString('user_business_name') ?? "Nama Bisnis";
@@ -79,7 +79,7 @@ class _HomePageState extends State<HomePage> {
     _refreshProducts();
   }
 
-  void _refreshProducts() async {
+  Future<void> _refreshProducts() async {
     setState(() => _isLoading = true);
     try {
       final categoriesData = await ExcashDatabase.instance.getAllCategory();
@@ -93,13 +93,12 @@ class _HomePageState extends State<HomePage> {
 
       final products = await ExcashDatabase.instance.getAllProducts();
 
-      // Filter out disabled products here
       final activeProducts =
           products.where((product) => !product.is_disabled).toList();
 
       setState(() {
-        _products = activeProducts; // Use only active products
-        filteredProducts = activeProducts; // Update filteredProducts
+        _products = activeProducts;
+        filteredProducts = activeProducts;
         _categories = categories.toList()..sort();
         _isLoading = false;
       });
@@ -449,18 +448,22 @@ class _HomePageState extends State<HomePage> {
                   ? const Center(child: CircularProgressIndicator())
                   : filteredProducts.isEmpty
                       ? const Center(child: Text('Produk Kosong'))
-                      : ListView.builder(
-                          itemCount: filteredProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = filteredProducts[index];
-                            return ProductCardBeliWidget(
-                              product: product,
-                              initialQuantity: getProductQuantity(product),
-                              refreshProduct: _refreshProducts,
-                              updateTotalAmount: (change) =>
-                                  _updateTotalAmount(product, change),
-                            );
-                          },
+                      : RefreshIndicator(
+                          onRefresh:
+                              _refreshProducts, // Tambahkan fungsi refresh
+                          child: ListView.builder(
+                            itemCount: filteredProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = filteredProducts[index];
+                              return ProductCardBeliWidget(
+                                product: product,
+                                initialQuantity: getProductQuantity(product),
+                                refreshProduct: _refreshProducts,
+                                updateTotalAmount: (change) =>
+                                    _updateTotalAmount(product, change),
+                              );
+                            },
+                          ),
                         ),
             )
           ],

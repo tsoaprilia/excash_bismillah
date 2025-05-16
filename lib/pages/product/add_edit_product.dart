@@ -150,16 +150,16 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       final db = await ExcashDatabase.instance.database;
       final existingProduct = await db.query(
         tableProduct,
-        where: '${ProductFields.name_product} = ?',
-        whereArgs: [_name],
+        where:
+            '${ProductFields.name_product} = ? AND ${ProductFields.id_product} != ?',
+        whereArgs: [_name, _isUpdateForm ? _idProduct : ''],
       );
 
       if (existingProduct.isNotEmpty) {
         setState(() {
-          _nameCategoryError =
-              "Produk dengan nama '$_name' sudah ada"; // Menampilkan pesan error
+          _nameCategoryError = "Produk dengan nama '$_name' sudah ada";
         });
-        return; // Hentikan proses penyimpanan jika nama produk sudah ada
+        return;
       }
 
       final newProduct = Product(

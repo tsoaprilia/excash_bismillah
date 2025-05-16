@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.CAMERA" />
 
+  <uses-permission android:name="android.permission.SEND_SMS" />
+  <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+
 
     <!-- Izin penyimpanan untuk Android 10+ -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

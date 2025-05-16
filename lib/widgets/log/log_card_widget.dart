@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';  // Import the intl package for date formatting
+import 'package:intl/intl.dart'; // Import the intl package for date formatting
 
 class LogCardWidget extends StatelessWidget {
   final String id_log;
-  final String date;  // Ensure this is a String representing the date
+  final String date; // Ensure this is a String representing the date
   final String type;
   final String user;
   final String username;
@@ -24,8 +24,10 @@ class LogCardWidget extends StatelessWidget {
   // Convert the date to a human-readable format
   String _formatDate(String date) {
     try {
-      DateTime parsedDate = DateTime.parse(date); // Parse the date string to DateTime
-      return DateFormat('d MMMM yyyy, HH:mm').format(parsedDate); // Format the DateTime
+      DateTime parsedDate =
+          DateTime.parse(date); // Parse the date string to DateTime
+      return DateFormat('d MMMM yyyy, HH:mm')
+          .format(parsedDate); // Format the DateTime
     } catch (e) {
       return date; // If parsing fails, return the original string
     }
@@ -39,6 +41,8 @@ class LogCardWidget extends StatelessWidget {
         return const Color(0xFFFFF2CC);
       case 'add':
         return const Color(0xFFE6F7E6);
+      case 'transaction':
+        return Color.fromARGB(255, 230, 241, 247);
       default:
         return Colors.grey;
     }
@@ -52,6 +56,8 @@ class LogCardWidget extends StatelessWidget {
         return const Color(0xFFD39054);
       case 'add':
         return Colors.green;
+      case 'transaction':
+        return Color.fromARGB(255, 15, 98, 142);
       default:
         return Colors.black;
     }
@@ -68,8 +74,7 @@ class LogCardWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withOpacity(0.1), // Warna shadow lebih soft
+                color: Colors.black.withOpacity(0.1), // Warna shadow lebih soft
                 blurRadius: 8, // Efek shadow lebih lembut
                 spreadRadius: 0, // Tidak menyebar terlalu jauh
                 offset: const Offset(0, 0), // Posisi shadow
@@ -113,7 +118,8 @@ class LogCardWidget extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _formatDate(date),  // Use the formatted date here
+                                  _formatDate(
+                                      date), // Use the formatted date here
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -142,22 +148,6 @@ class LogCardWidget extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.circle,
-                                size: 6, color: Colors.black54),
-                            const SizedBox(width: 6),
-                            Text(
-                              user,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF181717),
-                              ),
-                            ),
-                          ],
-                        ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
@@ -174,20 +164,6 @@ class LogCardWidget extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.circle,
-                                size: 6, color: Colors.black54),
-                            const SizedBox(width: 6),
-                            Text(
-                              "Operasi: $operation",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF757B7B),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),

@@ -19,7 +19,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String _userName = "Nama Pengguna";
-  String _userEmail = "Full Pengguna";
+  String _userUsername = "Full Pengguna";
   String _userbusinessName = "Nama Bisnis";
   String _profileImage = 'assets/img/profile.jpg';
 
@@ -39,8 +39,8 @@ class _ProfilePageState extends State<ProfilePage> {
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _userName = prefs.getString('user_name') ?? "Nama Pengguna";
-      _userEmail = prefs.getString('user_email') ?? "Email Pengguna";
+      _userName = prefs.getString('user_name') ?? "Nama Lengkap";
+      _userUsername = prefs.getString('user_username') ?? "Nama Pengguna";
       _userbusinessName =
           prefs.getString('user_business_name') ?? "Nama Bisnis";
       _profileImage =
@@ -90,7 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 8),
                   // Nama Pengguna
                   Text(
-                    _userName,
+                    _userUsername,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -129,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
-                        _buildInfoRow("Email", _userEmail),
+                        _buildInfoRow("Nama Lengkap", _userName),
                         _buildInfoRow("Nama Usaha", _userbusinessName),
                       ],
                     ),

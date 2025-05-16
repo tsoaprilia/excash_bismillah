@@ -19,6 +19,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController businessAddressController =
       TextEditingController();
   final TextEditingController npwpController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
+
   File? _image;
   String? userId;
   String? password;
@@ -42,6 +44,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           businessNameController.text = user.businessName;
           businessAddressController.text = user.businessAddress;
           npwpController.text = user.npwp ?? '';
+          phoneNumberController.text = user.phoneNumber;
           password = user.password;
           if (user.image != null) {
             _image = File(user.image!);
@@ -73,6 +76,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       npwp: npwpController.text.isEmpty ? null : npwpController.text,
       password: password ?? '',
       image: _image?.path ?? 'default.png',
+       phoneNumber: phoneNumberController.text,
     );
 
     await ExcashDatabase.instance.updateUser(updatedUser);
@@ -190,6 +194,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             buildTextField("Alamat Usaha", businessAddressController),
             const SizedBox(height: 16),
             buildTextField("NPWP (Opsional)", npwpController),
+            const SizedBox(height: 24),
+            buildTextField("Nomor Telepon", phoneNumberController),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

@@ -26,7 +26,7 @@ class _TransactionPageState extends State<TransactionPage> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _fullName =
-          prefs.getString('user_name') ?? 'Guest'; // Ambil dari key yang benar
+          prefs.getString('user_username') ?? 'Guest'; // Ambil dari key yang benar
     });
   }
 

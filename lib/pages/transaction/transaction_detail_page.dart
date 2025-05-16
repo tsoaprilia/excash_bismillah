@@ -111,7 +111,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
           // Baris 2: qty x @harga_satuan    subtotal di kanan
           printer.printLeftRight(
             '${d['quantity']} x @${fRp(d['harga_satuan'].toInt())}',
-            fRp(d['subtotal'].toInt()),
+            "Rp ${fRp((d['quantity'] * d['harga_satuan']).toInt())}",
             1,
           );
         }

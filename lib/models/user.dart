@@ -9,6 +9,7 @@ class UserFields {
   static const String image = 'image';
   static const String businessAddress = 'business_address';
   static const String npwp = 'npwp';
+  static const String phoneNumber = 'phone_number';
 }
 
 class User {
@@ -20,6 +21,7 @@ class User {
   final String? image;
   final String businessAddress;
   final String? npwp;
+  final String phoneNumber;
 
   User({
     this.id,
@@ -30,6 +32,7 @@ class User {
     this.image,
     required this.businessAddress,
     this.npwp,
+    required this.phoneNumber,
   });
 
   User copy({
@@ -41,6 +44,7 @@ class User {
     String? image,
     String? businessAddress,
     String? npwp,
+    String? phoneNumber,
   }) =>
       User(
         id: id ?? this.id,
@@ -51,6 +55,7 @@ class User {
         image: image ?? this.image,
         businessAddress: businessAddress ?? this.businessAddress,
         npwp: npwp ?? this.npwp,
+        phoneNumber: phoneNumber ?? this.phoneNumber,
       );
 
   static User fromJson(Map<String, Object?> json) => User(
@@ -62,6 +67,7 @@ class User {
         image: json[UserFields.image] as String?,
         businessAddress: json[UserFields.businessAddress] as String,
         npwp: json[UserFields.npwp] as String?,
+        phoneNumber: json[UserFields.phoneNumber] as String,
       );
 
   Map<String, Object?> toJson() => {
@@ -71,7 +77,8 @@ class User {
         UserFields.businessName: businessName,
         UserFields.password: password,
         UserFields.image: image,
-        UserFields.businessAddress : businessAddress,
-        UserFields.npwp : npwp,
+        UserFields.businessAddress: businessAddress,
+        UserFields.npwp: npwp,
+        UserFields.phoneNumber: phoneNumber,
       };
 }

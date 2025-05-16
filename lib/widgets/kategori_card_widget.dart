@@ -138,21 +138,148 @@ class CategoryCardWidget extends StatelessWidget {
     }
   }
 
+  Future<bool> showConfirmationDialog(BuildContext context) async {
+    bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Icon(Icons.event_note_outlined,
+                        color: Color(0xFF424242), size: 24),
+                    const Expanded(
+                      child: Text(
+                        "Konfirmasi Hapus",
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: Color(0xFF424242)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () => Navigator.of(context).pop(false),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Image.asset('assets/img/confirm.png', width: 60, height: 60),
+                const SizedBox(height: 16),
+                const Text(
+                  "Apakah Anda yakin ingin menghapus kategori ini?",
+                  style: TextStyle(
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                      color: Color(0xFF757B7B)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          primary: Colors.white,
+                          onPrimary: const Color(0xFF424242),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 24),
+                          side: const BorderSide(color: Color(0xFF424242)),
+                        ),
+                        child: const Text("Ya",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 14)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          primary: Colors.white,
+                          onPrimary: const Color(0xFFD39054),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 24),
+                          side: const BorderSide(color: Color(0xFFD39054)),
+                        ),
+                        child: const Text("Tidak",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 14)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      try {
+        await ExcashDatabase.instance.deleteCategoryById(category.id_category!);
+        refreshCategory();
+        showNotificationDialog(context, true);
+      } catch (e) {
+        showNotificationDialog(context, false, message: e.toString());
+      }
+      return true;
+    }
+
+    return false; // <- TAMBAHKAN INI untuk menghindari error
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
-      color: Colors.white, // Pastikan warna ini tetap putih
-      elevation: 0, // Hilangkan elevation bawaan
+      color: Colors.white,
+      elevation: 0,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05), // Shadow lebih soft
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 5,
               spreadRadius: 1,
               offset: const Offset(0, 2),
@@ -160,7 +287,6 @@ class CategoryCardWidget extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          // Agar border radius ListTile ikut 12px
           borderRadius: BorderRadius.circular(12),
           child: ListTile(
             leading: Container(
@@ -190,6 +316,7 @@ class CategoryCardWidget extends StatelessWidget {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Tombol Edit
                 Container(
                   width: 24,
                   height: 24,
@@ -211,7 +338,7 @@ class CategoryCardWidget extends StatelessWidget {
                               AddEditCategoryPage(category: category),
                         ),
                       ).then((_) {
-                        refreshCategory(); // Panggil refresh setelah halaman AddEditCategoryPage ditutup
+                        refreshCategory();
                       });
                     },
                     padding: EdgeInsets.zero,
@@ -219,6 +346,8 @@ class CategoryCardWidget extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+
+                // Tombol Delete
                 Container(
                   width: 24,
                   height: 24,
@@ -233,20 +362,22 @@ class CategoryCardWidget extends StatelessWidget {
                       size: 16,
                     ),
                     onPressed: () async {
-                      int success = await ExcashDatabase.instance
-                          .deleteCategoryById(category.id_category!);
+                      bool confirm = await showConfirmationDialog(context);
+                      if (confirm) {
+                        int success = await ExcashDatabase.instance
+                            .deleteCategoryById(category.id_category!);
 
-                      if (success == -1) {
-                        // Show message for failed deletion because the category is in use
-                        showNotificationDialog(
-                          context,
-                          false,
-                          message:
-                              "Kategori ini tidak bisa dihapus karena masih digunakan di tabel lain.",
-                        );
-                      } else {
-                        showNotificationDialog(context, success > 0);
-                        refreshCategory();
+                        if (success == -1) {
+                          showNotificationDialog(
+                            context,
+                            false,
+                            message:
+                                "Kategori ini tidak bisa dihapus karena masih digunakan di tabel lain.",
+                          );
+                        } else {
+                          showNotificationDialog(context, success > 0);
+                          refreshCategory();
+                        }
                       }
                     },
                     padding: EdgeInsets.zero,
@@ -261,6 +392,3 @@ class CategoryCardWidget extends StatelessWidget {
     );
   }
 }
-
-
-

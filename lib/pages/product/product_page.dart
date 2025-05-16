@@ -35,13 +35,13 @@ class _ProductPageState extends State<ProductPage> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _fullName =
-          prefs.getString('user_name') ?? 'Guest'; // Ambil dari key yang benar
+          prefs.getString('user_username') ?? 'Guest'; // Ambil dari key yang benar
     });
   }
 
   void _filterProducts(String query) {
     setState(() {
-      // Tidak perlu lakukan apapun di sini, hanya trigger rebuild
+      filteredProducts = _getFilteredProducts();
     });
   }
 

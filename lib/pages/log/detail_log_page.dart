@@ -67,26 +67,42 @@ class _LogDetailPageState extends State<LogDetailPage> {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, size: 24, color: Colors.black),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    size: 24, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
             ),
-            const Expanded(
+            const Padding(
+              padding: EdgeInsets.only(left: 16.0),
               child: Text(
                 "Detail Aktivitas",
-                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFF424242),
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            const SizedBox(width: 48),
+            )
           ],
         ),
       ),
@@ -117,11 +133,6 @@ class _LogDetailPageState extends State<LogDetailPage> {
                   const Divider(),
                   _buildRow("Username", _logDetail!.username),
                   const Divider(),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Pembayaran",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
                   _buildRow("Waktu Aktivitas", _formatDate(_logDetail!.date)),
                   const Divider(),
                   const SizedBox(height: 12),
@@ -129,14 +140,8 @@ class _LogDetailPageState extends State<LogDetailPage> {
                     "Aksi User",
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
-                   _buildActionRow("Type", widget.type),
+                  _buildRow2("New Value", _logDetail!.detail),
                   const Divider(),
-                  _buildRow("Operasi", "Produk"),
-                  const Divider(),
-                  
-                  _buildRow("Old Value", _logDetail!.oldValue ?? "N/A"),
-                  const Divider(),
-                  _buildRow("New Value", _logDetail!.newValue ?? "N/A"),
                 ],
               ),
             ),
@@ -159,7 +164,31 @@ class _LogDetailPageState extends State<LogDetailPage> {
     );
   }
 
-/// Widget for displaying the action row
+  Widget _buildRow2(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start, // Align text at the top
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 14),
+          ),
+          const SizedBox(width: 8), // Spacing between label and value
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+              softWrap: true, // Allow text to wrap into multiple lines
+              overflow: TextOverflow.visible, // Ensure long text is visible
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Widget for displaying the action row
   Widget _buildActionRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

@@ -7,8 +7,7 @@ class LogActivityFields {
   static const String user = 'user';
   static const String username = 'username';
   static const String operation = 'operation';
-  static const String oldValue = 'oldValue';  // Field for old value
-  static const String newValue = 'newValue';  // Field for new value
+  static const String detail = 'detail'; // NEW
 }
 
 class LogActivity {
@@ -18,8 +17,7 @@ class LogActivity {
   final String user;
   final String username;
   final String operation;
-  final String? oldValue;
-  final String? newValue;
+  final String detail; // NEW
 
   LogActivity({
     this.id_log,
@@ -28,8 +26,7 @@ class LogActivity {
     required this.user,
     required this.username,
     required this.operation,
-    this.oldValue,
-    this.newValue,
+    required this.detail,
   });
 
   LogActivity copy({
@@ -39,8 +36,7 @@ class LogActivity {
     String? user,
     String? username,
     String? operation,
-    String? oldValue,
-    String? newValue,
+    String? detail,
   }) =>
       LogActivity(
         id_log: id_log ?? this.id_log,
@@ -49,8 +45,7 @@ class LogActivity {
         user: user ?? this.user,
         username: username ?? this.username,
         operation: operation ?? this.operation,
-        oldValue: oldValue ?? this.oldValue,
-        newValue: newValue ?? this.newValue,
+        detail: detail ?? this.detail,
       );
 
   static LogActivity fromJson(Map<String, Object?> json) => LogActivity(
@@ -60,8 +55,7 @@ class LogActivity {
         user: json[LogActivityFields.user] as String,
         username: json[LogActivityFields.username] as String,
         operation: json[LogActivityFields.operation] as String,
-        oldValue: json[LogActivityFields.oldValue] as String?,
-        newValue: json[LogActivityFields.newValue] as String?,
+        detail: json[LogActivityFields.detail] as String,
       );
 
   Map<String, Object?> toJson() => {
@@ -71,8 +65,6 @@ class LogActivity {
         LogActivityFields.user: user,
         LogActivityFields.username: username,
         LogActivityFields.operation: operation,
-        LogActivityFields.oldValue: oldValue,
-        LogActivityFields.newValue: newValue,
+        LogActivityFields.detail: detail,
       };
 }
-

@@ -21,6 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController businessAddressController =
       TextEditingController();
   final TextEditingController npwpController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -35,8 +36,14 @@ class _RegisterPageState extends State<RegisterPage> {
   // Fungsi untuk validasi format username
   bool isValidUsername(String username) {
     final RegExp usernameRegExp = RegExp(
-        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$');
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$',
+    );
     return usernameRegExp.hasMatch(username);
+  }
+
+  bool isValidPhoneNumber(String phone) {
+    final RegExp phoneRegExp = RegExp(r'^(0|\+62)\d{9,12}$');
+    return phoneRegExp.hasMatch(phone);
   }
 
   Future<void> registerUser() async {
@@ -56,6 +63,23 @@ class _RegisterPageState extends State<RegisterPage> {
     String npwp = npwpController.text;
     String password = passwordController.text;
     String confirmPassword = confirmPasswordController.text;
+    String phoneNumber = phoneNumberController.text;
+
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nomor telepon tidak boleh kosong")),
+      );
+      return;
+    }
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                "Nomor telepon tidak valid. Gunakan 10-13 digit, mulai dengan 0 atau +62")),
+      );
+      return;
+    }
 
     if (businessAddress.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,6 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
       npwp: npwp.isEmpty ? null : npwp,
       password: password,
       image: null,
+      phoneNumber: phoneNumber,
     );
 
     try {
@@ -179,6 +204,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 label: "NPWP (Opsional)",
                 hintText: "1234567890",
                 controller: npwpController,
+              ),
+              buildTextField(
+                label: "Nomor Telepon ",
+                hintText: "1234567890",
+                controller: phoneNumberController,
               ),
               const SizedBox(height: 16),
               buildTextField(

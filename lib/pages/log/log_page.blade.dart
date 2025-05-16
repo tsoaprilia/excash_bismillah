@@ -12,7 +12,7 @@ class LogPage extends StatefulWidget {
 }
 
 class _LogPageState extends State<LogPage> {
-  final typeOptions = ['Semua', 'add', 'edit', 'delete'];
+  final typeOptions = ['Semua', 'add', 'edit', 'delete', 'login', 'transaction'];
 
   List<LogActivity> _logs = [];
   List<LogActivity> _allLogs = [];
@@ -153,7 +153,7 @@ class _LogPageState extends State<LogPage> {
                   _buildDropdown(
                     label: 'Tipe',
                     value: _selectedType,
-                    items: ['Semua', 'add', 'edit', 'delete'],
+                    items: ['Semua', 'add', 'edit', 'delete', 'login', 'transaction'],
                     onChanged: (val) {
                       setState(() => _selectedType = val!);
                       _applyFilters();
