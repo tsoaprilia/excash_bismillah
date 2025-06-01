@@ -546,6 +546,7 @@ class ExcashDatabase {
         UserFields.npwp,
         UserFields.password,
         UserFields.image,
+        UserFields.phoneNumber, // INI PENTING
       ],
       where: '${UserFields.id} = ?',
       whereArgs: [id],

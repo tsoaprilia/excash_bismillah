@@ -166,20 +166,19 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new,
+                icon: Icon(Icons.arrow_back_ios_new,
                     size: 20, color: Colors.black),
                 onPressed: () {
                   Navigator.pop(context);
                 },
               ),
             ),
-            const SizedBox(width: 12), // Jarak antara ikon dan teks
+            const SizedBox(width: 12),
             const Text(
               "Keranjang Belanja",
               style: TextStyle(
@@ -204,187 +203,169 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
 
           var userData = snapshot.data!;
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Bagian Kasir dan Nama Bisnis (Dua Kolom)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Kasir:",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(userData['user_username'],
-                        style: const TextStyle(fontSize: 18)),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Nama Bisnis:",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(userData['bisnis_name'],
-                        style: const TextStyle(fontSize: 18)),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-                const Divider(), // Garis pemisah
-
-                // Daftar Produk dengan Tiga Kolom (Nama, Jumlah, Harga)
-                Expanded(
-                  child: Column(
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Kasir dan Bisnis
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Header untuk daftar produk
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: Colors.black, width: 1),
-                          ),
+                      const Text("Kasir:",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(userData['user_username'],
+                          style: const TextStyle(fontSize: 18)),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Nama Bisnis:",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(userData['bisnis_name'],
+                          style: const TextStyle(fontSize: 18)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Divider(),
+
+                  // Header Produk
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Colors.black, width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Expanded(
+                          flex: 3,
+                          child: Text("Nama Produk",
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
+                        Expanded(
+                          flex: 2,
+                          child: Text("",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text("Subtotal",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.right),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Daftar Produk
+                  Column(
+                    children: widget.cart.map((item) {
+                      final product = item['product'] as Product;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
+                          children: [
                             Expanded(
                               flex: 3,
-                              child: Text("Nama Produk",
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text(product.name_product),
                             ),
                             Expanded(
                               flex: 2,
-                              child: Text("",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                              child: Text(
+                                  '${item['quantity']} x Rp ${fRp(product.selling_price)}',
                                   textAlign: TextAlign.center),
                             ),
                             Expanded(
                               flex: 2,
-                              child: Text("Subtotal",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.right),
+                              child: Text(
+                                'Rp ${fRp((product.selling_price * item['quantity']).toInt())}',
+                                textAlign: TextAlign.right,
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                      );
+                    }).toList(),
+                  ),
 
-                      // List produk
-                      // Displaying unit price along with total price for each product
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: widget.cart.length,
-                          itemBuilder: (context, index) {
-                            final item = widget.cart[index];
-                            final product = item['product'] as Product;
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: Text(product.name_product),
-                                  ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                        '${item['quantity']} x Rp ${fRp(product.selling_price)}',
-                                        textAlign: TextAlign.center),
-                                  ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      'Rp ${fRp((product.selling_price * item['quantity']).toInt())}',
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                  const Divider(),
+
+                  // Total Harga
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Total:",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text("Rp ${fRp(getTotalPrice())}",
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 10),
 
-                const Divider(), // Garis pemisah
-
-                // Bagian Total Harga (Dua Kolom)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Total:",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("Rp ${fRp(getTotalPrice())}",
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // Input Uang Pelanggan
-                TextFormField(
-                  controller: paymentController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Masukkan Uang Pelanggan",
-                    labelStyle:
-                        TextStyle(color: Color(0xFFD39054)), // Warna label
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                          color: Color(0xFFD39054),
-                          width: 2.0), // Warna ketika diinputkan
-                    ),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                          color: Colors.purple,
-                          width: 1.5), // Warna default (ungu)
-                    ),
-                  ),
-                  onChanged: onPaymentChanged,
-                  style: TextStyle(color: Colors.black), // Warna teks input
-                ),
-
-                const SizedBox(height: 24),
-
-                // Bagian Kembalian (Dua Kolom)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Kembalian:",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("Rp ${fRp(change.toInt())}",
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // Tombol Simpan Transaksi
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: saveTransaction,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E1E1E),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  // Input Pembayaran
+                  TextFormField(
+                    controller: paymentController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Masukkan Uang Pelanggan",
+                      labelStyle: TextStyle(color: Color(0xFFD39054)),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Color(0xFFD39054), width: 2.0),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide:
+                            BorderSide(color: Colors.purple, width: 1.5),
                       ),
                     ),
-                    child: const Text("Simpan Transaksi"),
+                    onChanged: onPaymentChanged,
+                    style: TextStyle(color: Colors.black),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+
+                  // Kembalian
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Kembalian:",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text("Rp ${fRp(change.toInt())}",
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Tombol Simpan Transaksi
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: saveTransaction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E1E1E),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text("Simpan Transaksi"),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

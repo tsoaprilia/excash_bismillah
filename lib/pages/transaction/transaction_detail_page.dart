@@ -92,7 +92,9 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
 
         printer.printCustom(
             formatTextForPrinting(userData.businessAddress), 1, 1);
-        printer.printCustom('NPWP : ${userData.npwp}', 1, 1);
+        if (userData.npwp?.isNotEmpty ?? false) {
+          printer.printCustom('NPWP : ${userData.npwp}', 1, 1);
+        }
 
         printer.printNewLine();
         printer.printCustom('Id Transaksi: ${orderData.id_order}', 1, 0);

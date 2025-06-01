@@ -2,7 +2,9 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/excash.dart';
 import 'package:excash/models/product.dart';
 import 'package:excash/pages/product/add_edit_product.dart';
+import 'package:excash/pages/product/product_cart2_page.dart';
 import 'package:excash/pages/product/product_cart_page.dart';
+import 'package:excash/pages/transaction/print.dart';
 import 'package:excash/widgets/product/product_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
@@ -34,8 +36,8 @@ class _ProductPageState extends State<ProductPage> {
   Future<void> _getFullName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _fullName =
-          prefs.getString('user_username') ?? 'Guest'; // Ambil dari key yang benar
+      _fullName = prefs.getString('user_username') ??
+          'Guest'; // Ambil dari key yang benar
     });
   }
 
@@ -81,20 +83,22 @@ class _ProductPageState extends State<ProductPage> {
         category.name_category: category.id_category ?? 0,
     };
 
-    filteredProducts = _products;
+    final filteredProducts = _getFilteredProducts();
     setState(() => _isLoading = false);
   }
 
 // Fungsi untuk menambah atau mengurangi stok
   void _updateStock(Product product, int change) {
     setState(() {
-      // Pastikan stock adalah integer
-      int newStock = product.stock + change; // Tidak perlu parsing ke int
-      newStock = newStock
-          .clamp(0, double.infinity)
-          .toInt(); // Pastikan stok tidak negatif
-      _productStocks[product.id_product] = newStock; // Simpan perubahan stok
-      _hasStockChanges = true; // Tandai bahwa stok telah berubah
+      int newStock =
+          (_productStocks[product.id_product] ?? product.stock) + change;
+      newStock = newStock.clamp(0, double.infinity).toInt();
+
+      _productStocks[product.id_product] = newStock;
+      product.stock =
+          newStock; // <- Tambahkan ini untuk update juga ke daftar _products
+
+      _hasStockChanges = true;
     });
   }
 
@@ -102,17 +106,17 @@ class _ProductPageState extends State<ProductPage> {
   void _saveUpdatedStocks() async {
     try {
       for (var product in _products) {
-        final newStock = _productStocks[product.id_product] ?? product.stock;
-        if (newStock != product.stock) {
+        final changedStock = _productStocks[product.id_product];
+        if (changedStock != null) {
           await ExcashDatabase.instance.updateProductStock(
             product.id_product,
-            newStock,
+            changedStock,
           );
         }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Stok produk berhasil disimpan!"),
+        content: Text("Tunggulah beberapa saat!, Proses penyimpanan"),
       ));
 
       setState(() {
@@ -131,6 +135,7 @@ class _ProductPageState extends State<ProductPage> {
     super.initState();
     _refreshProducts();
     _getFullName();
+    _saveUpdatedStocks();
   }
 
   @override
@@ -166,7 +171,7 @@ class _ProductPageState extends State<ProductPage> {
             Column(
               children: [
                 Text(
-                  "Welcome",
+                  "Selamat Datang",
                   style: TextStyle(
                     color: Color(0xFF757B7B),
                     fontSize: 12,
@@ -200,14 +205,15 @@ class _ProductPageState extends State<ProductPage> {
               ),
               child: IconButton(
                 icon: Icon(
-                  Icons.shopping_cart_outlined,
+                  Icons.print,
                   size: 24,
                   color: Colors.black,
                 ),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ProductCartPage()),
+                    MaterialPageRoute(
+                        builder: (context) => PrintSettingsPage()),
                   );
                 },
               ),
@@ -301,24 +307,14 @@ class _ProductPageState extends State<ProductPage> {
             SizedBox(height: 10),
             SizedBox(
               height: 40,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: ['Semua', ..._categories.map((e) => e.name_category)]
-                    .length,
-                itemBuilder: (context, index) {
-                  final categoryList = [
-                    'Semua',
-                    ..._categories.map((e) => e.name_category)
-                  ];
-                  final category = categoryList[index];
-                  final isSelected = category == _selectedCategory;
-
-                  return GestureDetector(
+              child: Row(
+                children: [
+                  // Tombol "Semua" fixed di kiri
+                  GestureDetector(
                     onTap: () {
                       setState(() {
-                        _selectedCategory = category;
-                        _filterProducts(searchController
-                            .text); // Filter saat kategori dipilih
+                        _selectedCategory = 'Semua';
+                        _filterProducts(searchController.text);
                       });
                     },
                     child: Container(
@@ -326,22 +322,67 @@ class _ProductPageState extends State<ProductPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.black : Colors.white,
+                        color: _selectedCategory == 'Semua'
+                            ? Colors.black
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.black, width: 1),
                       ),
                       child: Center(
                         child: Text(
-                          category,
+                          'Semua',
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
+                            color: _selectedCategory == 'Semua'
+                                ? Colors.white
+                                : Colors.black,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                  );
-                },
+                  ),
+
+                  // ListView.builder untuk kategori lain (exclude 'Semua')
+                  Expanded(
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) {
+                        final category = _categories[index].name_category;
+                        final isSelected = category == _selectedCategory;
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategory = category;
+                              _filterProducts(searchController.text);
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.black : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.black, width: 1),
+                            ),
+                            child: Center(
+                              child: Text(
+                                category,
+                                style: TextStyle(
+                                  color:
+                                      isSelected ? Colors.white : Colors.black,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 10),
@@ -405,20 +446,32 @@ class _ProductPageState extends State<ProductPage> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _products.isEmpty
-                      ? const Center(child: Text('Produk Kosong'))
-                      : ListView.builder(
-                          itemCount: filteredProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = filteredProducts[index];
-                            return ProductCardWidget(
-                              product: product,
-                              categories: _categories,
-                              refreshProduct: _refreshProducts,
-                              updateStock: _updateStock,
-                            );
-                          },
+                      ? RefreshIndicator(
+                          onRefresh: _refreshProducts,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 200),
+                              Center(child: Text('Produk Kosong')),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _refreshProducts,
+                          child: ListView.builder(
+                            itemCount: filteredProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = filteredProducts[index];
+                              return ProductCardWidget(
+                                product: product,
+                                categories: _categories,
+                                refreshProduct: _refreshProducts,
+                                updateStock: _updateStock,
+                              );
+                            },
+                          ),
                         ),
-            ),
+            )
           ],
         ),
       ),

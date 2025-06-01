@@ -2,6 +2,7 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/main.dart';
 import 'package:excash/models/excash.dart';
 import 'package:excash/pages/add_edit_kategori_page.dart';
+import 'package:excash/pages/transaction/print.dart';
 import 'package:excash/widgets/kategori_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,7 +15,7 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  String? _fullName;
+  String? _userName;
   late List<Category> _categories;
   var _isLoading = false;
   late List<Category> _filteredCategories;
@@ -24,9 +25,10 @@ class _CategoryPageState extends State<CategoryPage> {
   Future<void> _getFullName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _fullName = prefs.getString('user_name') ?? 'Guest';
+      _userName = prefs.getString('user_username') ?? 'Guest';
     });
   }
+
 
   Future<void> printCategoryData() async {
     final db = await ExcashDatabase.instance.database;
@@ -122,7 +124,7 @@ class _CategoryPageState extends State<CategoryPage> {
             Column(
               children: [
                 Text(
-                  "Welcome",
+                  "Selamat Datang",
                   style: TextStyle(
                     color: Color(0xFF757B7B),
                     fontSize: 12,
@@ -130,7 +132,7 @@ class _CategoryPageState extends State<CategoryPage> {
                   ),
                 ),
                 Text(
-                  _fullName ?? '',
+                  _userName ?? '',
                   style: TextStyle(
                     color: Color(0xFF424242),
                     fontSize: 12,
@@ -156,13 +158,15 @@ class _CategoryPageState extends State<CategoryPage> {
               ),
               child: IconButton(
                 icon: Icon(
-                  Icons.settings_outlined,
+                  Icons.print,
                   size: 24,
                   color: Colors.black,
                 ),
-                onPressed: () async {
-                  // Panggil fungsi izin
-                  await requestStoragePermission();
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PrintSettingsPage()),
+                  );
                 },
               ),
             ),

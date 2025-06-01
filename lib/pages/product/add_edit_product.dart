@@ -151,8 +151,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       final existingProduct = await db.query(
         tableProduct,
         where:
-            '${ProductFields.name_product} = ? AND ${ProductFields.id_product} != ?',
-        whereArgs: [_name, _isUpdateForm ? _idProduct : ''],
+            'LOWER(${ProductFields.name_product}) = ? AND ${ProductFields.id_product} != ?',
+        whereArgs: [_name.toLowerCase(), _isUpdateForm ? _idProduct : ''],
       );
 
       if (existingProduct.isNotEmpty) {

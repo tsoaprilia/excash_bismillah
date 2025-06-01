@@ -2,6 +2,7 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/excash.dart';
 import 'package:excash/models/product.dart';
 import 'package:excash/pages/product/product_cart_page.dart';
+import 'package:excash/pages/transaction/print.dart';
 import 'package:excash/widgets/product/product_card_widget.dart';
 import 'package:excash/widgets/transaction/transaction_card_widget.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +26,8 @@ class _TransactionPageState extends State<TransactionPage> {
   Future<void> _getFullName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _fullName =
-          prefs.getString('user_username') ?? 'Guest'; // Ambil dari key yang benar
+      _fullName = prefs.getString('user_username') ??
+          'Guest'; // Ambil dari key yang benar
     });
   }
 
@@ -41,33 +42,34 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Future<void> _fetchTransactions() async {
-  if (_isLoading) return;
+    if (_isLoading) return;
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  final orders = await ExcashDatabase.instance.getAllTransactions();
+    final orders = await ExcashDatabase.instance.getAllTransactions();
 
-  List<TransactionData> transactions = orders.map((order) {
-    return TransactionData(
-      transactionId: order.id_order.toString(),
-      total: "Rp. ${order.total_price}",
-      time: order.created_at.toString(),
-    );
-  }).toList();
+    List<TransactionData> transactions = orders.map((order) {
+      return TransactionData(
+        transactionId: order.id_order.toString(),
+        total: "Rp. ${order.total_price}",
+        time: order.created_at.toString(),
+      );
+    }).toList();
 
-  setState(() {
-    _transactions = transactions;
-    _filteredTransactions = transactions; // set awal data hasil filter
-    _isLoading = false;
-  });
-}
+    setState(() {
+      _transactions = transactions;
+      _filteredTransactions = transactions; // set awal data hasil filter
+      _isLoading = false;
+    });
+  }
+
 // Di halaman Transaksi
-void refreshTransaction() async {
-  setState(() async {
-    _transactions = (await ExcashDatabase.instance.getAllTransactions()).cast<TransactionData>(); // Muat ulang data transaksi
-  });
-}
-
+  void refreshTransaction() async {
+    setState(() async {
+      _transactions = (await ExcashDatabase.instance.getAllTransactions())
+          .cast<TransactionData>(); // Muat ulang data transaksi
+    });
+  }
 
   @override
   void initState() {
@@ -108,7 +110,7 @@ void refreshTransaction() async {
             Column(
               children: [
                 Text(
-                  "Welcome",
+                  "Selamat Datang",
                   style: TextStyle(
                     color: Color(0xFF757B7B),
                     fontSize: 12,
@@ -131,17 +133,26 @@ void refreshTransaction() async {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: Offset(0, 0),
+                  ),
+                ],
               ),
               child: IconButton(
                 icon: Icon(
-                  Icons.shopping_cart_outlined,
+                  Icons.print,
                   size: 24,
                   color: Colors.black,
                 ),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ProductCartPage()),
+                    MaterialPageRoute(
+                        builder: (context) => PrintSettingsPage()),
                   );
                 },
               ),
@@ -157,7 +168,7 @@ void refreshTransaction() async {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                 boxShadow: [
+                boxShadow: [
                   BoxShadow(
                     color: Colors.black
                         .withOpacity(0.1), // Warna shadow lebih soft

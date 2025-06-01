@@ -16,6 +16,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
   thermal.BluetoothDevice? _selectedDevice;
   bool _isConnected = false;
   bool _isBluetoothOn = false;
+  List<BluetoothDevice> _availableDevices = []; // dari flutter_blue_plus
 
   @override
   void initState() {
@@ -26,12 +27,28 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
   Future<void> _initBluetooth() async {
     await _requestPermissions();
     try {
-      List<thermal.BluetoothDevice> devices =
+      // Dapatkan perangkat yang sudah disandingkan
+      List<thermal.BluetoothDevice> bondedDevices =
           await bluetooth.getBondedDevices();
       bool isConnected = await bluetooth.isConnected ?? false;
       var state = await FlutterBluePlus.adapterState.first;
+
+      // Scan perangkat baru yang tersedia
+      _availableDevices.clear();
+      FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      FlutterBluePlus.scanResults.listen((results) {
+        for (ScanResult result in results) {
+          if (!_availableDevices
+              .any((d) => d.remoteId == result.device.remoteId)) {
+            setState(() {
+              _availableDevices.add(result.device);
+            });
+          }
+        }
+      });
+
       setState(() {
-        _devices = devices;
+        _devices = bondedDevices;
         _isConnected = isConnected;
         _isBluetoothOn = (state == BluetoothAdapterState.on);
       });
@@ -243,6 +260,18 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
   }
 
   Widget _buildPrinterDropdown() {
+    final Map<String, thermal.BluetoothDevice> deviceMap = {
+      for (var device in [
+        ..._devices,
+        ..._availableDevices.map((e) => thermal.BluetoothDevice(
+              e.platformName,
+              e.remoteId.str,
+            )),
+      ])
+        device.address!: device,
+    };
+
+    final allDevices = deviceMap.values.toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -270,7 +299,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
           hint: const Text("Pilih Printer"),
-          items: _devices.map((device) {
+          items: allDevices.map((device) {
             return DropdownMenuItem(
               value: device,
               child: Text(

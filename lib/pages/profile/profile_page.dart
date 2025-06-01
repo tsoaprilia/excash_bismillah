@@ -43,8 +43,13 @@ class _ProfilePageState extends State<ProfilePage> {
       _userUsername = prefs.getString('user_username') ?? "Nama Pengguna";
       _userbusinessName =
           prefs.getString('user_business_name') ?? "Nama Bisnis";
-      _profileImage =
-          prefs.getString('user_profile_image') ?? 'assets/img/profile.jpg';
+
+      String? imagePath = prefs.getString('user_profile_image');
+      if (imagePath != null && File(imagePath).existsSync()) {
+        _profileImage = imagePath;
+      } else {
+        _profileImage = 'assets/img/profile.jpg'; // fallback ke asset
+      }
     });
   }
 
@@ -81,9 +86,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(
                           4), // Border radius untuk gambar
-                      child: _profileImage.startsWith('assets')
-                          ? Image.asset(_profileImage, fit: BoxFit.cover)
-                          : Image.file(File(_profileImage), fit: BoxFit.cover),
+                      child: () {
+                        if (_profileImage.startsWith('assets')) {
+                          return Image.asset(_profileImage, fit: BoxFit.cover);
+                        } else {
+                          final file = File(_profileImage);
+                          if (file.existsSync()) {
+                            return Image.file(file, fit: BoxFit.cover);
+                          } else {
+                            return Image.asset('assets/img/profile.jpg',
+                                fit: BoxFit.cover);
+                          }
+                        }
+                      }(),
                     ),
                   ),
 
@@ -388,7 +403,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         await prefs.remove('user_name');
                         await prefs.remove('user_email');
                         await prefs.remove('user_business_name');
-
+                        // await prefs.remove('user_profile_image');
                         if (mounted) {
                           Navigator.pushAndRemoveUntil(
                             context,

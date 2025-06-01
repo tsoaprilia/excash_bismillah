@@ -21,7 +21,7 @@ class Product {
   final String name_product;
   final int price;
   final int selling_price;
-  final int stock;
+   int stock;
   final String description;
   final DateTime created_at;
   final DateTime updated_at;

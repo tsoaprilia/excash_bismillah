@@ -76,7 +76,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       npwp: npwpController.text.isEmpty ? null : npwpController.text,
       password: password ?? '',
       image: _image?.path ?? 'default.png',
-       phoneNumber: phoneNumberController.text,
+      phoneNumber: phoneNumberController.text,
     );
 
     await ExcashDatabase.instance.updateUser(updatedUser);
@@ -98,6 +98,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Profil berhasil diperbarui")),
     );
+    Navigator.pop(context);
   }
 
   @override

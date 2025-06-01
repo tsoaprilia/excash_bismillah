@@ -78,7 +78,7 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
       orElse: () => Category(
         id_category: 0,
         id: userId ?? 'unknown',
-        name_category: "Tidak diketahui",
+        name_category: "Lainnya",
         created_at_category: DateTime.now(),
         updated_at_category: DateTime.now(),
       ),
@@ -219,7 +219,7 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
           return const Center(child: Text("Kategori tidak ditemukan"));
         }
 
-        final categoryName = snapshot.data ?? "Tidak diketahui";
+        final categoryName = snapshot.data ?? "Lainnya";
 
         // Check if the product is disabled
         return widget.product.is_disabled

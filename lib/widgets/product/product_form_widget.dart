@@ -26,7 +26,7 @@ class ProductFormWidget extends StatefulWidget {
   final ValueChanged<String> onSellingPriceChanged;
   final ValueChanged<String> onStockChanged;
   final ValueChanged<String> onDescriptionChanged;
-    final bool isEditMode;
+  final bool isEditMode;
   // final VoidCallback onPickImage;
   final String? nameCategoryError;
 
@@ -48,9 +48,9 @@ class ProductFormWidget extends StatefulWidget {
     required this.onSellingPriceChanged,
     required this.onStockChanged,
     required this.onDescriptionChanged,
-     required this.isEditMode,
+    required this.isEditMode,
     // required this.onPickImage,
-     this.nameCategoryError, 
+    this.nameCategoryError,
   });
 
   @override
@@ -95,36 +95,137 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
       final List<Map<String, dynamic>> categories =
           await db.query(tableCategory);
 
-      if (categories.isEmpty) {
-        print("🔴 Tidak ada kategori yang ditemukan di database.");
-      } else {
-        print("✅ Kategori berhasil diambil: $categories");
-      }
-
       setState(() {
         _categories = categories;
       });
 
-//tambah
-      if (widget.category != null) {
-        final foundCategory = categories.firstWhere(
-          (cat) => cat['id_category'].toString() == widget.category,
-          orElse: () => {},
-        );
+      if (categories.isEmpty) {
+        // Tampilkan dialog jika tidak ada kategori
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                backgroundColor: Colors.white,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Icon(
+                            Icons.category_outlined,
+                            color: const Color(0xFF424242),
+                            size: 24,
+                          ),
+                          Expanded(
+                            child: Text(
+                              "Kategori Tidak Tersedia",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                color: Color(0xFF424242),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 5,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
-        if (foundCategory.isNotEmpty) {
-          _selectedCategory = foundCategory['id_category'].toString();
+                      // Image or Icon
+                      Image.asset(
+                         'assets/img/confirm.png', 
+                        width: 60,
+                        height: 60,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Message
+                      Text(
+                        "Belum ada kategori yang tersedia.\nSilakan tambahkan kategori terlebih dahulu.",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
+                          color: Color(0xFF757B7B),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Tombol kembali
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            primary: Colors.white,
+                            onPrimary: Color(0xFFD39054),
+                            side: BorderSide(color: Color(0xFFD39054)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text(
+                            "Kembali",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        });
+      } else {
+        // Jika kategori ditemukan, lanjutkan seperti biasa
+        if (widget.category != null) {
+          final foundCategory = categories.firstWhere(
+            (cat) => cat['id_category'].toString() == widget.category,
+            orElse: () => {},
+          );
+
+          if (foundCategory.isNotEmpty) {
+            _selectedCategory = foundCategory['id_category'].toString();
+          }
         }
       }
-
-      // if (widget.category != null) {
-      //   _selectedCategory = categories
-      //       .firstWhere(
-      //         (cat) => cat['id'].toString() == widget.category,
-      //         orElse: () => {},
-      //       )
-      //       .toString();
-      // }
     } catch (e) {
       print("❌ Error saat mengambil kategori: $e");
     }
@@ -166,15 +267,14 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
               label: 'ID Produk',
               controller: widget.idProductController,
               onChanged: widget.onIdProductChanged,
-               enabled: !widget.isEditMode, // Make the input field disabled
+              enabled: !widget.isEditMode, // Make the input field disabled
               backgroundColor: Colors.grey[200]),
 
           _buildTextField(
-            label: 'Nama Produk',
-            controller: _nameController,
-            onChanged: widget.onNameChanged,
-            errorText: widget.nameCategoryError
-          ),
+              label: 'Nama Produk',
+              controller: _nameController,
+              onChanged: widget.onNameChanged,
+              errorText: widget.nameCategoryError),
           _buildCategoryDropdown(),
           _buildTextField(
             label: 'Harga Beli',
@@ -295,8 +395,7 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
           items: _categories.map((category) {
             return DropdownMenuItem<String>(
               value: category['id_category'].toString(),
-              child:
-                  Text(category['name_category'] ?? "Kategori Tidak Diketahui"),
+              child: Text(category['name_category'] ?? "Lainnya"),
             );
           }).toList(),
           onChanged: (value) {
@@ -327,4 +426,3 @@ class _ProductFormWidgetState extends State<ProductFormWidget> {
     );
   }
 }
-

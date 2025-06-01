@@ -255,7 +255,7 @@ class _HomePageState extends State<HomePage> {
             Column(
               children: [
                 Text(
-                  "Welcome",
+                  "Selamat Datang",
                   style: TextStyle(
                     color: Color(0xFF757B7B),
                     fontSize: 12,
@@ -404,42 +404,81 @@ class _HomePageState extends State<HomePage> {
 
             SizedBox(
               height: 40,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
-                itemBuilder: (context, index) {
-                  final category = _categories[index];
-                  final isSelected = category == _selectedCategory;
-
-                  return GestureDetector(
+              child: Row(
+                children: [
+                  // Tombol "Semua" fixed di kiri
+                  GestureDetector(
                     onTap: () {
                       setState(() {
-                        _selectedCategory = category;
-                        _filterProducts(searchController
-                            .text); // 🟢 Tambahkan ini agar filter diperbarui
+                        _selectedCategory = "Semua";
+                        _filterProducts(searchController.text);
                       });
                     },
                     child: Container(
-                      margin: const EdgeInsets.only(right: 8),
+                      margin:
+                          const EdgeInsets.only(right: 8), // beri jarak kanan
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.black : Colors.white,
+                        color: _selectedCategory == "Semua"
+                            ? Colors.black
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.black, width: 1),
                       ),
                       child: Text(
-                        category,
+                        "Semua",
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
+                          color: _selectedCategory == "Semua"
+                              ? Colors.white
+                              : Colors.black,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                  );
-                },
+                  ),
+
+                  // List kategori lain scroll horizontal di sebelah kanan tombol "Semua"
+                  Expanded(
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _categories
+                          .where((cat) => cat != "Semua")
+                          .map((category) {
+                        final isSelected = category == _selectedCategory;
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategory = category;
+                              _filterProducts(searchController.text);
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.black : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.black, width: 1),
+                            ),
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
               ),
             ),
+
             const SizedBox(height: 10),
 
             // Daftar Produk

@@ -207,7 +207,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               buildTextField(
                 label: "Nomor Telepon ",
-                hintText: "1234567890",
+                hintText: "081336740560",
                 controller: phoneNumberController,
               ),
               const SizedBox(height: 16),

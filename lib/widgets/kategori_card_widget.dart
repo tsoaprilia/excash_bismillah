@@ -250,19 +250,7 @@ class CategoryCardWidget extends StatelessWidget {
         );
       },
     );
-
-    if (confirmed == true) {
-      try {
-        await ExcashDatabase.instance.deleteCategoryById(category.id_category!);
-        refreshCategory();
-        showNotificationDialog(context, true);
-      } catch (e) {
-        showNotificationDialog(context, false, message: e.toString());
-      }
-      return true;
-    }
-
-    return false; // <- TAMBAHKAN INI untuk menghindari error
+    return confirmed == true;
   }
 
   @override
@@ -364,19 +352,27 @@ class CategoryCardWidget extends StatelessWidget {
                     onPressed: () async {
                       bool confirm = await showConfirmationDialog(context);
                       if (confirm) {
-                        int success = await ExcashDatabase.instance
-                            .deleteCategoryById(category.id_category!);
+                        try {
+                          int success = await ExcashDatabase.instance
+                              .deleteCategoryById(category.id_category!);
 
-                        if (success == -1) {
+                          if (success == -1) {
+                            showNotificationDialog(
+                              context,
+                              false,
+                              message:
+                                  "Kategori ini tidak bisa dihapus karena masih digunakan di Produk.",
+                            );
+                          } else {
+                            showNotificationDialog(context, true);
+                            refreshCategory();
+                          }
+                        } catch (e) {
                           showNotificationDialog(
                             context,
                             false,
-                            message:
-                                "Kategori ini tidak bisa dihapus karena masih digunakan di tabel lain.",
+                            message: e.toString(),
                           );
-                        } else {
-                          showNotificationDialog(context, success > 0);
-                          refreshCategory();
                         }
                       }
                     },
