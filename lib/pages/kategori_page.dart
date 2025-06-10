@@ -29,7 +29,6 @@ class _CategoryPageState extends State<CategoryPage> {
     });
   }
 
-
   Future<void> printCategoryData() async {
     final db = await ExcashDatabase.instance.database;
 
@@ -165,7 +164,8 @@ class _CategoryPageState extends State<CategoryPage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => PrintSettingsPage()),
+                    MaterialPageRoute(
+                        builder: (context) => PrintSettingsPage()),
                   );
                 },
               ),
@@ -271,16 +271,21 @@ class _CategoryPageState extends State<CategoryPage> {
                   ? const Center(child: CircularProgressIndicator())
                   : _filteredCategories.isEmpty
                       ? const Center(child: Text('Kategori Kosong'))
-                      : ListView.builder(
-                          itemCount: _filteredCategories.length,
-                          itemBuilder: (context, index) {
-                            final category = _filteredCategories[index];
-                            return CategoryCardWidget(
-                              category: category,
-                              index: index,
-                              refreshCategory: _refreshCategory,
-                            );
-                          },
+                      : RefreshIndicator(
+                          onRefresh: _refreshCategory,
+                          child: ListView.builder(
+                            physics:
+                                const AlwaysScrollableScrollPhysics(), // Penting agar bisa di-pull saat data pendek
+                            itemCount: _filteredCategories.length,
+                            itemBuilder: (context, index) {
+                              final category = _filteredCategories[index];
+                              return CategoryCardWidget(
+                                category: category,
+                                index: index,
+                                refreshCategory: _refreshCategory,
+                              );
+                            },
+                          ),
                         ),
             ),
           ],

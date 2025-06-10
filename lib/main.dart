@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:excash/filemanager.dart';
 import 'package:excash/general_pages/auth/auth_page.dart';
+import 'package:excash/general_pages/onboarding_screen.dart';
 import 'package:excash/general_pages/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Function to request storage permissions
 Future<void> requestStoragePermission() async {
@@ -18,7 +20,6 @@ Future<void> requestStoragePermission() async {
 }
 
 // Function to get download path
-
 Future<String?> getDownloadPath() async {
   Directory? directory;
   try {
@@ -53,13 +54,11 @@ Future<void> saveFileToDownload() async {
     }
 
     try {
-      // Check if the directory exists
       final directory = Directory(downloadDir);
       if (!await directory.exists()) {
-        await directory.create(recursive: true); // Create directory if needed
+        await directory.create(recursive: true);
       }
 
-      // Save CSV file
       await file.writeAsString("Data CSV berhasil disimpan!");
       print("✅ File disimpan di: $savePath");
     } catch (e) {
@@ -68,6 +67,17 @@ Future<void> saveFileToDownload() async {
   } else {
     print("❌ Gagal mendapatkan path penyimpanan.");
   }
+}
+
+// di main.dart tambahkan:
+Future<bool> isFirstTimeUser() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool('tutorial_completed') ?? false;
+}
+
+Future<void> setTutorialCompleted() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('tutorial_completed', true);
 }
 
 void main() async {
@@ -83,24 +93,32 @@ void main() async {
     print("Gagal mendapatkan path penyimpanan eksternal.");
   }
 
+  // Cek apakah onboarding sudah selesai
+  final prefs = await SharedPreferences.getInstance();
+  bool onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+
   runApp(
     ShowCaseWidget(
-      builder: (context) => const MyApp(),
+      builder: (context) => MyApp(showOnboarding: !onboardingComplete),
     ),
   );
 }
 
+
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool showOnboarding;
+
+  const MyApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Buat home langsung ke SplashScreen-mu
-      home: const SplashScreen(),
+      debugShowCheckedModeBanner: false,
+      home: showOnboarding ? const OnboardingScreen() : const SplashScreen(),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFFD39054)),
         useMaterial3: true,
-      ),);
+      ),
+    );
   }
 }

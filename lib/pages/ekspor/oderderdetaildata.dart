@@ -40,7 +40,6 @@ class OrderDetailData {
        // Ekspor Tabel Order Detail
     List<Map<String, dynamic>> orderDetails = await db.query('order_detail');
     if (orderDetails.isNotEmpty) {
-      csvData.add([]); // Baris kosong pemisah antar tabel
       csvData.add([
         'id_order_detail',
         'id_order',

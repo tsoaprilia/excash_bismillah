@@ -84,11 +84,39 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> loginUser() async {
-    String username = usernameController.text; // rename to fullName
+  Future<User?> _resetPassword(String username) async {
+    final db = await ExcashDatabase.instance.database;
+
+    final result = await db.query(
+      tableUser,
+      where: '${UserFields.username} = ?',
+      whereArgs: [username],
+    );
+
+    if (result.isNotEmpty) {
+      return User.fromJson(result.first);
+    } else {
+      return null;
+    }
+  }
+
+  Future<bool> isFirstTimeUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('tutorial_completed') ?? true;
+  }
+
+  Future<void> setTutorialCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('tutorial_completed', true);
+  }
+
+  Future<void> loginUser({
+    required Function(String message) onError,
+    required Function(bool firstTime) onSuccess,
+  }) async {
+    String username = usernameController.text;
     String password = passwordController.text;
 
-    // Update the login query to use fullName and password
     final user = await ExcashDatabase.instance.loginUser(username, password);
 
     if (user != null) {
@@ -102,7 +130,6 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('user_npwp', user.npwp!);
       }
 
-      // Simpan data user untuk transaksi
       await saveUserData(
         user.id!,
         user.fullName,
@@ -119,42 +146,16 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setInt(
             'remember_me_timestamp', DateTime.now().millisecondsSinceEpoch);
       } else {
-        // Jika tidak dicentang, hapus data sebelumnya
         await prefs.setBool('remember_me', false);
         await prefs.remove('remembered_username');
         await prefs.remove('remembered_password');
         await prefs.remove('remember_me_timestamp');
       }
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login berhasil")),
-      );
 
-      // Navigate to the main screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      bool firstTime = await isFirstTimeUser();
+      onSuccess(firstTime);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Nama Pengguna atau password salah")),
-      );
-    }
-  }
-
-  Future<User?> _resetPassword(String username) async {
-    final db = await ExcashDatabase.instance.database;
-
-    final result = await db.query(
-      tableUser,
-      where: '${UserFields.username} = ?',
-      whereArgs: [username],
-    );
-
-    if (result.isNotEmpty) {
-      return User.fromJson(result.first);
-    } else {
-      return null;
+      onError("Nama Pengguna atau password salah");
     }
   }
 
@@ -256,7 +257,29 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: loginUser,
+                    onPressed: () {
+                      loginUser(
+                        onSuccess: (bool firstTime) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Login berhasil")),
+                          );
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => firstTime
+                                  ? MainScreen(initialIndex: 1)
+                                  : const MainScreen(),
+                            ),
+                          );
+                        },
+                        onError: (String error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(error)),
+                          );
+                        },
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E1E1E),
                       foregroundColor: Colors.white,

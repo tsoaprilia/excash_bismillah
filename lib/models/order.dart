@@ -44,6 +44,7 @@ class Order {
         id: json[OrderFields.id] ?? 0, // Default 0 jika null
         total_product: json[OrderFields.total_product],
         total_price: json[OrderFields.total_price],
+
         payment: json[OrderFields.payment],
         change: json[OrderFields.change],
         created_at: DateTime.parse(json[OrderFields.created_at]),

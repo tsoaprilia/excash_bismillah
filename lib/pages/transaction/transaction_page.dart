@@ -229,14 +229,21 @@ class _TransactionPageState extends State<TransactionPage> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _transactions.isEmpty
-                      ? const Center(child: Text('Transaksi Kosong'))
-                      : RefreshIndicator(
-                          onRefresh:
-                              _fetchTransactions, // Menambahkan onRefresh
-                          child: ListView.builder(
+              child: RefreshIndicator(
+                onRefresh: _fetchTransactions,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredTransactions.isEmpty
+                        ? ListView(
+                            // Membuat ListView kosong agar bisa swipe refresh
+                            children: const [
+                              SizedBox(
+                                height: 200,
+                                child: Center(child: Text('Transaksi Kosong')),
+                              )
+                            ],
+                          )
+                        : ListView.builder(
                             itemCount: _filteredTransactions.length,
                             itemBuilder: (context, index) {
                               final transaction = _filteredTransactions[index];
@@ -247,7 +254,8 @@ class _TransactionPageState extends State<TransactionPage> {
                                 refreshTransaction: _fetchTransactions,
                               );
                             },
-                          )),
+                          ),
+              ),
             ),
           ],
         ),

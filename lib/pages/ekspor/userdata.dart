@@ -68,7 +68,6 @@ class UserData {
     // Ekspor Tabel User
     List<Map<String, dynamic>> users = await db.query('users');
     if (users.isNotEmpty) {
-      csvData.add([]); // Baris kosong pemisah antar tabel
       csvData.add([
         'id',
         'username',
@@ -77,7 +76,8 @@ class UserData {
         'business_address',
         'npwp',
         'password',
-        'image'
+        'image',
+        'phone_number'
       ]);
       for (var row in users) {
         csvData.add([
@@ -88,7 +88,8 @@ class UserData {
           row['business_address'],
           row['npwp'],
           encryptPassword(row['password']),
-          row['image'] ?? ''
+          row['image'] ?? '',
+          row['phone_number'] ?? '', 
         ]);
       }
     }

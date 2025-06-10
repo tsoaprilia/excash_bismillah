@@ -96,7 +96,7 @@ class _ImporPageState extends State<ImporPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Data berhasil diimpor!")),
     );
-    Navigator.pop(context, true); 
+    Navigator.pop(context, true);
   }
 
   // Print functions
@@ -114,6 +114,7 @@ class _ImporPageState extends State<ImporPage> {
         print("NPWP: ${user['npwp']}");
         print("Password: ${user['password']}");
         print("Image: ${user['image'] ?? 'N/A'}");
+        print("NumberPhone: ${user['numberPhone'] ?? 'N/A'}");
         print("------------------------------");
       });
     } else {

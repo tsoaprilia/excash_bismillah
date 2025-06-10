@@ -39,7 +39,6 @@ class CategoryData {
     // Rest of your export code remains the same
     List<Map<String, dynamic>> category = await db.query('category');
     if (category.isNotEmpty) {
-      csvData.add([]); // Baris kosong pemisah antar tabel
      csvData.add([
       'id_category',
       'id',

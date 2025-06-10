@@ -388,7 +388,7 @@ class ExcashDatabase {
     );
 
     // Log aktivitas update
-    await logActivity("update", currentUser.username, currentUser.fullName,
+    await logActivity("edit", currentUser.username, currentUser.fullName,
         "Product", "Memperbarui produk '${product.name_product}'");
 
     return result;
@@ -571,7 +571,6 @@ class ExcashDatabase {
   }
 
 //ORDER
-
   Future<int> createOrder(Order order, List<OrderDetail> orderDetails) async {
     final db = await instance.database;
 

@@ -40,7 +40,6 @@ class ProductData {
     // Ekspor Tabel Product
     List<Map<String, dynamic>> products = await db.query('product');
     if (products.isNotEmpty) {
-      csvData.add([]); // Baris kosong pemisah antar tabel
       csvData.add([
         'id_product',
         'id',

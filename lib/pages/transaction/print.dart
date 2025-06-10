@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart' as thermal;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PrintSettingsPage extends StatefulWidget {
   const PrintSettingsPage({Key? key}) : super(key: key);
@@ -26,8 +27,9 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
 
   Future<void> _initBluetooth() async {
     await _requestPermissions();
+
     try {
-      // Dapatkan perangkat yang sudah disandingkan
+      // Dapatkan device yang sudah dipasangkan
       List<thermal.BluetoothDevice> bondedDevices =
           await bluetooth.getBondedDevices();
       bool isConnected = await bluetooth.isConnected ?? false;
@@ -46,6 +48,33 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
           }
         }
       });
+
+      // Cek apakah ada alamat printer yang tersimpan
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? savedAddress = prefs.getString("printer_address");
+
+      thermal.BluetoothDevice? matchedDevice;
+      if (savedAddress != null) {
+        try {
+          matchedDevice =
+              bondedDevices.firstWhere((d) => d.address == savedAddress);
+        } catch (e) {
+          matchedDevice = null;
+        }
+
+        if (matchedDevice != null) {
+          try {
+            await bluetooth.connect(matchedDevice);
+            setState(() {
+              _selectedDevice = matchedDevice;
+              _isConnected = true;
+            });
+            _showSnackbar("Auto-terhubung ke ${matchedDevice.name}");
+          } catch (e) {
+            print("❌ Gagal auto-connect: $e");
+          }
+        }
+      }
 
       setState(() {
         _devices = bondedDevices;
@@ -110,6 +139,11 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
       setState(() {
         _isConnected = true;
       });
+
+      // ✅ Simpan alamat printer
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString("printer_address", _selectedDevice!.address!);
+
       _hideLoading();
       _showSnackbar("Terhubung ke ${_selectedDevice!.name}");
     } catch (e) {
@@ -121,9 +155,16 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
 
   Future<void> _disconnectPrinter() async {
     await bluetooth.disconnect();
+
+    // Hapus alamat printer yang tersimpan
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove("printer_address");
+
     setState(() {
       _isConnected = false;
+      _selectedDevice = null;
     });
+
     _showSnackbar("Printer terputus");
   }
 

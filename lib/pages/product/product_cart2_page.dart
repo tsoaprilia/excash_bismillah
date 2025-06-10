@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:excash/pages/transaction/transaction_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,15 +6,16 @@ import 'package:excash/database/excash_database.dart';
 import 'package:excash/models/order.dart';
 import 'package:excash/models/order_detail.dart';
 import 'package:excash/models/product.dart';
+import 'package:excash/pages/transaction/transaction_detail_page.dart';
 
 class ProductCart2Page extends StatefulWidget {
   final List<Map<String, dynamic>> cart;
   final Function onTransactionSuccess;
 
-  ProductCart2Page({
+  const ProductCart2Page({
     Key? key,
     required this.cart,
-    required this.onTransactionSuccess, // Add this to the constructor
+    required this.onTransactionSuccess,
   }) : super(key: key);
 
   @override
@@ -25,16 +25,32 @@ class ProductCart2Page extends StatefulWidget {
 class _ProductCart2PageState extends State<ProductCart2Page> {
   Timer? _debounce;
   final TextEditingController paymentController = TextEditingController();
+  final TextEditingController discountController = TextEditingController();
+  final FocusNode _paymentFocusNode = FocusNode();
 
   double payment = 0;
   double change = 0;
+  double discountValue = 0;
 
   final _idr = NumberFormat('#,##0', 'id_ID');
   String fRp(int value) => _idr.format(value);
 
   @override
+  void initState() {
+    super.initState();
+    // Baris ini dikomentari/dihapus untuk mencegah keyboard muncul secara otomatis
+    // dan berpotensi menyebabkan masalah fokus/layout di awal.
+    // Biarkan pengguna mengetuk input secara manual.
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   FocusScope.of(context).requestFocus(_paymentFocusNode);
+    // });
+  }
+
+  @override
   void dispose() {
+    _paymentFocusNode.dispose();
     paymentController.dispose();
+    discountController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -65,7 +81,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
 
   void onPaymentChanged(String val) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 500), () {
       setState(() {
         payment = double.tryParse(val) ?? 0;
         calculateChange();
@@ -73,48 +89,50 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
     });
   }
 
+  void onDiscountChanged(String val) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 1000), () {
+      setState(() {
+        discountValue = double.tryParse(val) ?? 0;
+        calculateChange();
+      });
+    });
+  }
+
   Future<void> saveTransaction() async {
-    // Ambil ID user yang sedang login
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String id = prefs.getString('id') ?? 'unknown';
 
-    double finalTotal =
-        getTotalPrice().toDouble(); // Total harga dari keranjang belanja
+    double finalTotal = getTotalPrice().toDouble();
 
     if (payment < finalTotal) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Uang kurang!")),
+        const SnackBar(content: Text("Uang kurang!")),
       );
       return;
     }
 
-    // Buat order pertama, dan ambil orderId setelah dibuat
     final order = Order(
       id_order: null,
-      id: id, // Menambahkan id_user
+      id: id,
       total_product:
           widget.cart.fold(0, (sum, item) => sum + (item['quantity'] as int)),
-      total_price:
-          finalTotal.toInt(), // Gunakan total_price yang dihitung dengan benar
+      total_price: finalTotal.toInt(),
       payment: payment.toInt(),
       change: change.toInt(),
       created_at: DateTime.now(),
     );
 
-    // Dapatkan orderId setelah membuat order
-    int orderId = await ExcashDatabase.instance
-        .createOrder(order, []); // Create the order and get orderId
+    int orderId = await ExcashDatabase.instance.createOrder(order, []);
 
-    // Loop melalui cart untuk memeriksa stok dan membuat detail order
     for (var item in widget.cart) {
       final product = item['product'] as Product;
       final quantity = item['quantity'] as int;
       final price = product.price.toDouble();
-      final subtotal = price * quantity; // Menghitung subtotal untuk item ini
+      final subtotal = price * quantity;
 
-      // Simpan detail order dengan subtotal yang dihitung
       await ExcashDatabase.instance.createOrderDetail(
-        orderId, // Menggunakan orderId yang dibuat dari fungsi di atas
+        orderId,
         int.tryParse(product.id_product!) ?? 0,
         quantity,
         price,
@@ -123,21 +141,17 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
 
       int updatedStock = product.stock - quantity;
       await ExcashDatabase.instance.updateProductStock(
-        product.id_product, // id_product tetap sebagai String
+        product.id_product,
         updatedStock,
       );
     }
 
-    // Panggil callback setelah transaksi berhasil
     widget.onTransactionSuccess();
 
-    // Tampilkan pesan sukses setelah menyelesaikan transaksi
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Transaksi berhasil!")),
+      const SnackBar(content: Text("Transaksi berhasil!")),
     );
-    Navigator.pop(context);
 
-    // Gunakan Navigator.pushReplacement untuk menggantikan halaman transaksi dengan halaman baru
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -150,6 +164,9 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      // PENTING: Mengatur ini ke `false` mencegah `Scaffold` mengubah ukurannya
+      // saat keyboard muncul. Ini adalah solusi utama untuk masalah layout/fokus.
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -166,12 +183,12 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new,
+                icon: const Icon(Icons.arrow_back_ios_new,
                     size: 20, color: Colors.black),
                 onPressed: () {
                   Navigator.pop(context);
@@ -194,11 +211,11 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
         future: getUserData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("User tidak ditemukan"));
+            return const Center(child: Text("User tidak ditemukan"));
           }
 
           var userData = snapshot.data!;
@@ -206,6 +223,10 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
           return SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              // Baris ini dihapus untuk mengeliminasi potensi dismiss keyboard
+              // yang tidak disengaja akibat interaksi gulir yang sensitif.
+              // keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -236,14 +257,14 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                   // Header Produk
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       border: Border(
                         bottom: BorderSide(color: Colors.black, width: 1),
                       ),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Expanded(
                           flex: 3,
                           child: Text("Nama Produk",
@@ -296,6 +317,7 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                       );
                     }).toList(),
                   ),
+                  const SizedBox(height: 4),
 
                   const Divider(),
 
@@ -313,24 +335,40 @@ class _ProductCart2PageState extends State<ProductCart2Page> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Input Pembayaran
-                  TextFormField(
-                    controller: paymentController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: "Masukkan Uang Pelanggan",
-                      labelStyle: TextStyle(color: Color(0xFFD39054)),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Color(0xFFD39054), width: 2.0),
-                      ),
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide:
-                            BorderSide(color: Colors.purple, width: 1.5),
+                  // MODIFIKASI PENTING DI SINI:
+                  // Input Pembayaran dibungkus dengan GestureDetector dan AbsorbPointer
+                  GestureDetector(
+                    onTap: () {
+                      // Ini akan secara eksplisit meminta fokus pada TextFormField
+                      FocusScope.of(context).requestFocus(_paymentFocusNode);
+                      // Anda bisa mencoba menambahkan ini jika requestFocus saja tidak cukup,
+                      // tetapi ini lebih sering menyebabkan masalah daripada memecahkan.
+                      // Coba tanpa ini terlebih dahulu.
+                      // SystemChannels.textInput.invokeMethod('TextInput.show');
+                    },
+                    child: AbsorbPointer(
+                      // AbsorbPointer mencegah TextFormField dari menangani tap-nya sendiri,
+                      // sehingga GestureDetector di atasnya yang akan mengambil alih.
+                      child: TextFormField(
+                        controller: paymentController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Masukkan Uang Pelanggan",
+                          labelStyle: TextStyle(color: Color(0xFFD39054)),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide:
+                                BorderSide(color: Color(0xFFD39054), width: 2.0),
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide:
+                                BorderSide(color: Colors.purple, width: 1.5),
+                          ),
+                        ),
+                        onChanged: onPaymentChanged,
+                        style: const TextStyle(color: Colors.black),
+                        focusNode: _paymentFocusNode, // Pastikan focusNode disetel
                       ),
                     ),
-                    onChanged: onPaymentChanged,
-                    style: TextStyle(color: Colors.black),
                   ),
                   const SizedBox(height: 24),
 

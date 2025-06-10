@@ -31,7 +31,7 @@ class ImportData {
       if (row.isEmpty) continue;
 
       if (i == 0) {
-        columns = row.sublist(1).cast<String>(); // Ambil nama kolom
+        columns = row.sublist(1).cast<String>();
         print('CSV Headers: $columns');
       } else {
         Map<String, dynamic> data = {};
@@ -42,7 +42,7 @@ class ImportData {
         print('Inserting $currentTable: $data');
 
         if (currentTable == 'users') {
-          if (row.length >= 6) {
+          if (row.length >= 9) {
             data[UserFields.id] = row[0]; // Generate UUID jika tidak ada
             data[UserFields.username] = row[1];
             data[UserFields.fullName] = row[2];
@@ -51,6 +51,7 @@ class ImportData {
             data[UserFields.npwp] = row[5];
             data[UserFields.password] = row[6];
             data[UserFields.image] = row[7] ?? 'N/A';
+            data[UserFields.phoneNumber] = row[8];
 
             // Menambahkan data ke tabel 'users', jika email sudah ada, maka data baru akan diabaikan
             print('Inserting user data: $data'); // Debugging log
@@ -76,7 +77,7 @@ class ImportData {
 
         // Untuk Product
         if (currentTable == 'product') {
-          if (row.length >= 10) {
+          if (row.length >= 11) {
             data[ProductFields.id_product] = row[0];
             data[ProductFields.id] = row[1];
             data[ProductFields.id_category] = row[2];
@@ -126,7 +127,6 @@ class ImportData {
           }
         }
       }
-      i++;
     }
 
     print("Data berhasil diimpor dari CSV!");
